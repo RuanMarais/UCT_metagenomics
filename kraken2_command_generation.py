@@ -8,8 +8,10 @@ import os
 
 
 def kraken2_command(input_read_1, input_read_2, kraken2_db, threads, output_directory, report_prefix):
-    return ['kraken2', '--db', kraken2_db, '--threads', threads, '--report',
-            os.path.join(output_directory, f'{report_prefix}.txt'), '--paired', input_read_1, input_read_2]
+    report = os.path.join(output_directory, f'{report_prefix}.txt')
+    krakenfile = os.path.join(output_directory, f'{report_prefix}_krakenfile')
+    return ['kraken2', '--db', kraken2_db, '--threads', threads, '--report', report, '--paired', input_read_1,
+            input_read_2, '--output', krakenfile]
 
 
 def generate_kraken2_commands(reads_dict, output_directory, threads, kraken2_db_path):

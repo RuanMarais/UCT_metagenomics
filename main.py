@@ -7,6 +7,9 @@ import knead_data_run
 import subprocess
 import shutil
 import kraken2_command_generation as kraken2
+import extract_from_krakenfile as extract
+import generate_meta_contigs_spades as spades
+import interleave_paired_reads as interleave
 
 # The input file for the pipeline
 parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic data. Created by GJK Marais.')
@@ -34,8 +37,9 @@ diamond_db_path = args.diamond_db
 kneaddata_db_path = args.kneaddata_db
 
 # Logging
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler(os.path.join(output_folder, "Run.log"))
+logger = logging.getLogger('UCT_metagenomics')
+handler = logging.FileHandler(os.path.join(output_folder, "UCT_metagenomics.log"))
+handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -65,8 +69,13 @@ knead_directory = os.path.join(output_folder, 'knead_data_results')
 kraken_source_directory = os.path.join(output_folder, 'kraken2_source_files')
 kraken2_directory_db1 = os.path.join(output_folder, 'kraken2_db1_results')
 kraken2_directory_db2 = os.path.join(output_folder, 'kraken2_db2_results')
+extracted_reads_db1_directory = os.path.join(output_folder, 'extracted_reads_db1')
+extracted_reads_db2_directory = os.path.join(output_folder, 'extracted_reads_db2')
 
-directories_to_create = [knead_directory, kraken2_directory_db1, kraken2_directory_db2, kraken_source_directory]
+extract_db_list = [extracted_reads_db1_directory, extracted_reads_db2_directory]
+
+directories_to_create = [knead_directory, kraken2_directory_db1, kraken2_directory_db2, kraken_source_directory,
+                         extracted_reads_db1_directory, extracted_reads_db2_directory]
 
 for directory in directories_to_create:
     if not os.path.exists(directory):
@@ -93,9 +102,8 @@ directory_paths_knead = [(os.path.join(knead_directory, folder), folder)
                          if os.path.isdir(os.path.join(knead_directory, folder))]
 for directory in directory_paths_knead:
     logging.debug(f'Kneaddata read output retrieval: {directory}')
-    # TODO: get correct path for knead output reads
-    filename_1 = f'{directory[1]}_paired_1.fasta'
-    filename_2 = f'{directory[1]}_paired_2.fasta'
+    filename_1 = f'{directory[1]}_L001_R1_001_kneaddata_paired_1.fasta'
+    filename_2 = f'{directory[1]}_L001_R1_001_kneaddata_paired_2.fasta'
     file_1 = os.path.join(directory[0], filename_1)
     file_2 = os.path.join(directory[0], filename_2)
     copy_path_1 = os.path.join(kraken_source_directory, filename_1)
@@ -129,25 +137,86 @@ for db, kraken_commands in enumerate(kraken_commands_list):
         except subprocess.CalledProcessError as e:
             logging.debug(f'Kraken2 command db{db+1} failed: {command}')
 
-
+# Create krakenfile dictionary to be used to extract relevant krakenfiles
 krakenfiles = {}
 krakenresults_folders = [kraken2_directory_db1, kraken2_directory_db2]
 for db, krakenfolder in enumerate(krakenresults_folders):
+    krakenfile_dict = {}
     folders_results = os.listdir(krakenfolder)
     paths_results = [(os.path.join(krakenfolder, folder), folder)
                      for folder in folders_results
                      if os.path.isdir(os.path.join(krakenfolder, folder))]
     for directory in paths_results:
-        logging.debug(f'Kraken2 output read output retrieval: {directory}')
-        # TODO: get correct path for knead output reads
-        filename_1 = f'{directory[1]}_paired_1.fasta'
-        filename_2 = f'{directory[1]}_paired_2.fasta'
-        file_1 = os.path.join(directory[0], filename_1)
-        file_2 = os.path.join(directory[0], filename_2)
-        copy_path_1 = os.path.join(kraken_source_directory, filename_1)
-        copy_path_2 = os.path.join(kraken_source_directory, filename_2)
-        if os.path.isfile(file_1) and os.path.isfile(file_2):
-            logging.debug(f'Kraken2 source files retrieved from: {directory}')
-            shutil.copy(file_1, kraken_source_directory)
-            shutil.copy(file_2, kraken_source_directory)
-        kraken2_source_files[directory[1]] = (copy_path_1, copy_path_2)
+        logging.debug(f'Krakenfile retrieval for db{db+1}: {directory}')
+        krakenfile_name = f'{directory[1]}_krakenfile'
+        file_path_krakenfile = os.path.join(directory[0], krakenfile_name)
+        query_file_path_1 = os.path.join(kraken_source_directory, f'{directory[1]}_L001_R1_001_kneaddata_paired_1.fasta')
+        query_file_path_2 = os.path.join(kraken_source_directory, f'{directory[1]}_L001_R1_001_kneaddata_paired_2.fasta')
+        if os.path.isfile(file_path_krakenfile):
+            logging.debug(f'krakenfile added to krakenfiles dictionary: {directory[1]}')
+        krakenfile_dict[directory[1]] = (file_path_krakenfile, query_file_path_1, query_file_path_2)
+    krakenfiles[db] = krakenfile_dict
+
+# Retrieve unassigned reads
+for db, krakenfiles_dict in krakenfiles.items():
+    logging.debug(f'Extracting unassigned reads for db{db+1}')
+    for sample, krakenfile in krakenfiles_dict.items():
+        logging.debug(f'Extracting unassigned reads for: {sample}')
+        output_directory = os.path.join(extract_db_list[db], sample)
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+            logging.debug(f'Output directory created: {output_directory}')
+        extract_reads_command = extract.extract_reads_command(krakenfile[0], 'Unassigned_reads', '0', krakenfile[1],
+                                                              krakenfile[2], output_directory)
+        try:
+            subprocess.run(extract_reads_command, check=True)
+            logging.debug(f'Extracting unassigned reads successful: {extract_reads_command}')
+        except subprocess.CalledProcessError as e:
+            logging.debug(f'Extracting unassigned reads failed: {extract_reads_command}')
+
+# Generate contigs and interleaved file for unassigned reads
+# Create output file structure
+unassigned_dict = {}
+for db, reads_folder in enumerate(extract_db_list):
+    unassigned_local = {}
+    folders_extract = os.listdir(reads_folder)
+    paths_extract = [(os.path.join(reads_folder, folder), folder)
+                     for folder in folders_extract
+                     if os.path.isdir(os.path.join(reads_folder, folder))]
+    for directory in paths_extract:
+        logging.debug(f'Generating contigs for: {directory[1]}')
+        output_directory = os.path.join(directory[0], 'Unassigned_reads')
+        unassigned_read_1 = os.path.join(output_directory, 'Unassigned_reads_1.fastq')
+        unassigned_read_2 = os.path.join(output_directory, 'Unassigned_reads_2.fastq')
+        contigs_folder = os.path.join(output_directory, 'contigs')
+        if not os.path.exists(contigs_folder):
+            os.makedirs(contigs_folder)
+            logging.debug(f'Contigs directory created: {contigs_folder}')
+
+        # Spades command
+        contigs_command = spades.meta_contigs(unassigned_read_1, unassigned_read_2, contigs_folder)
+        try:
+            subprocess.run(contigs_command, check=True)
+            logging.debug(f'Generating contigs successful: {contigs_command}')
+        except subprocess.CalledProcessError as e:
+            logging.debug(f'Generating contigs failed: {contigs_command}')
+
+        # create interleaved files
+        interleave_command = interleave.interleave_paired_reads(unassigned_read_1, unassigned_read_2,
+                                                                os.path.join(output_directory, 'interleaved.fasta'))
+
+        try:
+            subprocess.run(interleave_command, check=True)
+            logging.debug(f'Interleaving reads successful: {interleave_command}')
+        except subprocess.CalledProcessError as e:
+            logging.debug(f'Interleaving reads failed: {interleave_command}')
+
+        contigs_file = os.path.join(contigs_folder, 'contigs.fasta')
+        interleaved_file = os.path.join(output_directory, 'interleaved.fasta')
+        if os.path.isfile(contigs_file) and os.path.isfile(interleaved_file):
+            unassigned_local[directory[1]] = (contigs_file, interleaved_file)
+        elif os.path.isfile(interleaved_file):
+            unassigned_local[directory[1]] = (None, interleaved_file)
+        else:
+            unassigned_local[directory[1]] = (None, None)
+    unassigned_dict[db] = unassigned_local

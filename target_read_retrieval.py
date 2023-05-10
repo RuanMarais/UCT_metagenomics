@@ -96,9 +96,6 @@ for extraction_data in extract_kraken_reads_commands:
         logging.debug(f'krakenfile extraction command failed: {extraction_data[1]}')
 
 
-
-
-
 for command_dict in subprocess_commands_dict_list:
         try:
             subprocess.run(command_dict['BWA'], check=True)

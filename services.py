@@ -25,11 +25,11 @@ def filename_list_generate(file_identifier, folder_path):
     return filenames_output
 
 
-def paired_read_list_generate(id_length, file_id_r1, file_id_r2, filename_list):
+def paired_read_list_generate(id_length, file_id_r1, file_id_r2, filename_list, file_folder):
     # Separate filenames by id
     sample_sorted_dict = defaultdict(list)
     for file in filename_list:
-        unique_filename = file[:id_length + 1]
+        unique_filename = file[:id_length]
         sample_sorted_dict[unique_filename].append(file)
 
     # Separate pairs
@@ -46,7 +46,9 @@ def paired_read_list_generate(id_length, file_id_r1, file_id_r2, filename_list):
                 read_2 = file
                 logger.debug(f'Read 2 found: {key}')
         if read_1 is not None and read_2 is not None:
-            output = (read_1, read_2)
+            read_out_1 = os.path.join(file_folder, read_1)
+            read_out_2 = os.path.join(file_folder, read_2)
+            output = (read_out_1, read_out_2)
             logger.debug(f'Reads assigned to key: {key}')
             paired_sorted_dict[key] = output
 
