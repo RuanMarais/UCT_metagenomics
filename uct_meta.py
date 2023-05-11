@@ -10,6 +10,7 @@ import kraken2_command_generation as kraken2
 import extract_from_krakenfile as extract
 import generate_meta_contigs_spades as spades
 import interleave_paired_reads as interleave
+import diamond_assign as diamond
 
 # The input file for the pipeline
 parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic data. Created by GJK Marais.')
@@ -61,8 +62,11 @@ if kneaddata_db_path is None:
 file_names_all = services.filename_list_generate('001.fastq.gz', input_folder)
 
 # Separate filenames by id and into a list of pair tuples
-paired_sorted_dict = services.paired_read_list_generate(id_length, 'R1_001.fastq.gz',
-                                                        'R2_001.fastq.gz', file_names_all)
+paired_sorted_dict = services.paired_read_list_generate(id_length,
+                                                        'R1_001.fastq.gz',
+                                                        'R2_001.fastq.gz',
+                                                        file_names_all,
+                                                        input_folder)
 
 # Generate output directories
 knead_directory = os.path.join(output_folder, 'knead_data_results')
@@ -71,11 +75,17 @@ kraken2_directory_db1 = os.path.join(output_folder, 'kraken2_db1_results')
 kraken2_directory_db2 = os.path.join(output_folder, 'kraken2_db2_results')
 extracted_reads_db1_directory = os.path.join(output_folder, 'extracted_reads_db1')
 extracted_reads_db2_directory = os.path.join(output_folder, 'extracted_reads_db2')
+diamond_output = os.path.join(output_folder, 'diamond_output')
 
 extract_db_list = [extracted_reads_db1_directory, extracted_reads_db2_directory]
 
-directories_to_create = [knead_directory, kraken2_directory_db1, kraken2_directory_db2, kraken_source_directory,
-                         extracted_reads_db1_directory, extracted_reads_db2_directory]
+directories_to_create = [knead_directory,
+                         kraken2_directory_db1,
+                         kraken2_directory_db2,
+                         kraken_source_directory,
+                         extracted_reads_db1_directory,
+                         extracted_reads_db2_directory,
+                         diamond_output]
 
 for directory in directories_to_create:
     if not os.path.exists(directory):
@@ -83,8 +93,11 @@ for directory in directories_to_create:
         logger.debug(f'Output directory created: {directory}')
 
 # Generate kneaddata commands
-kneaddata_commands = knead_data_run.generate_kneaddata_commands(paired_sorted_dict, knead_directory, threads,
-                                                                trimmomatic_path, kneaddata_db_path)
+kneaddata_commands = knead_data_run.generate_kneaddata_commands(paired_sorted_dict,
+                                                                knead_directory,
+                                                                threads,
+                                                                trimmomatic_path,
+                                                                kneaddata_db_path)
 
 # Run kneaddata commands
 for knead_command in kneaddata_commands:
@@ -102,8 +115,8 @@ directory_paths_knead = [(os.path.join(knead_directory, folder), folder)
                          if os.path.isdir(os.path.join(knead_directory, folder))]
 for directory in directory_paths_knead:
     logging.debug(f'Kneaddata read output retrieval: {directory}')
-    filename_1 = f'{directory[1]}_L001_R1_001_kneaddata_paired_1.fasta'
-    filename_2 = f'{directory[1]}_L001_R1_001_kneaddata_paired_2.fasta'
+    filename_1 = f'{directory[1]}_L001_R1_001_kneaddata_paired_1.fastq'
+    filename_2 = f'{directory[1]}_L001_R1_001_kneaddata_paired_2.fastq'
     file_1 = os.path.join(directory[0], filename_1)
     file_2 = os.path.join(directory[0], filename_2)
     copy_path_1 = os.path.join(kraken_source_directory, filename_1)
@@ -220,3 +233,44 @@ for db, reads_folder in enumerate(extract_db_list):
         else:
             unassigned_local[directory[1]] = (None, None)
     unassigned_dict[db] = unassigned_local
+
+# Create diamond database
+create_db_command = diamond.diamond_build_db(diamond_db_path, output_folder, 'diamond_db')
+created_diamond_db = create_db_command[1]
+try:
+    subprocess.run(create_db_command[0], check=True)
+    logging.debug(f'Create diamond database: {create_db_command[0]}')
+except subprocess.CalledProcessError as e:
+    logging.debug(f'Create diamond database failed: {create_db_command[0]}')
+
+# Run diamond on unassigned reads
+for db, unassigned_dict in unassigned_dict.items():
+    db_folder = os.path.join(diamond_output, f'kraken_db{db+1}')
+    if not os.path.exists(db_folder):
+        os.makedirs(db_folder)
+    for sample, unassigned_files in unassigned_dict.items():
+        logging.debug(f'Running diamond on unassigned reads for: {sample}')
+        output_directory = os.path.join(db_folder, sample)
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+        if unassigned_files[0] is not None:
+            diamond_command_contigs = diamond.diamond_classify(created_diamond_db,
+                                                               unassigned_files[0],
+                                                               output_directory,
+                                                               f'{sample}_contigs')
+            try:
+                subprocess.run(diamond_command_contigs, check=True)
+                logging.debug(f'Diamond command successful: {diamond_command_contigs}')
+            except subprocess.CalledProcessError as e:
+                logging.debug(f'Diamond command failed: {diamond_command_contigs}')
+        if unassigned_files[1] is not None:
+            diamond_command_interleaved = diamond.diamond_classify(created_diamond_db,
+                                                                   unassigned_files[1],
+                                                                   output_directory,
+                                                                   f'{sample}_interleaved')
+            try:
+                subprocess.run(diamond_command_interleaved, check=True)
+                logging.debug(f'Diamond command successful: {diamond_command_interleaved}')
+            except subprocess.CalledProcessError as e:
+                logging.debug(f'Diamond command failed: {diamond_command_interleaved}')
+

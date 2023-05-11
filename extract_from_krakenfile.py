@@ -11,7 +11,7 @@ def extract_reads_command(krakenfile_path, org, taxid, input_read_1_path, input_
     if not os.path.exists(org_output):
         os.makedirs(org_output)
     output_paths = (os.path.join(org_output, org + '_1'), os.path.join(org_output, org + '_2'))
-    return ['extract_kraken_reads.py', '-k', krakenfile_path, '-t', taxid, '-fastq-output', '-s', input_read_1_path,
+    return ['extract_kraken_reads.py', '-k', krakenfile_path, '-t', taxid, '--fastq-output', '-s', input_read_1_path,
             '-s2', input_read_2_path, '-o', os.path.join(org_output, org + '_1.fastq'), '-o2',
             os.path.join(org_output, org + '_2.fastq')], output_paths
 
