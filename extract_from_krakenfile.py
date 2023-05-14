@@ -13,7 +13,7 @@ def extract_reads_command(krakenfile_path, org, taxid, input_read_1_path, input_
     output_paths = (os.path.join(org_output, org + '_1'), os.path.join(org_output, org + '_2'))
     return ['extract_kraken_reads.py', '-k', krakenfile_path, '-t', taxid, '--fastq-output', '-s', input_read_1_path,
             '-s2', input_read_2_path, '-o', os.path.join(org_output, org + '_1.fastq'), '-o2',
-            os.path.join(org_output, org + '_2.fastq')], output_paths
+            os.path.join(org_output, org + '_2.fastq')], output_paths, org_output
 
 
 def extract_targeted_reads(krakenfile_dict, target_dict, raw_reads_dict, output_dir):
@@ -27,10 +27,12 @@ def extract_targeted_reads(krakenfile_dict, target_dict, raw_reads_dict, output_
         krakenfile = krakenfile_dict[id_item]
         raw_read_1 = raw_reads_dict[id_item][0]
         raw_read_2 = raw_reads_dict[id_item][1]
+        reference = reference_data[2]
         extract_data = extract_reads_command(krakenfile, organism, taxid, raw_read_1, raw_read_2, output_dir)[0]
         command = extract_data[0]
         output_paths = extract_data[1]
-        output = [id_item, command, output_paths]
+        out_dir = extract_data[2]
+        output = [id_item, command, output_paths, organism, reference, out_dir]
         output_data.append(output)
     return output_data
 

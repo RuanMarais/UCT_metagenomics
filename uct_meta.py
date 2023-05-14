@@ -38,7 +38,7 @@ diamond_db_path = args.diamond_db
 kneaddata_db_path = args.kneaddata_db
 
 # Logging
-logger = logging.getLogger('UCT_metagenomics')
+logger = logging.getLogger(__name__)
 handler = logging.FileHandler(os.path.join(output_folder, "UCT_metagenomics.log"))
 handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
