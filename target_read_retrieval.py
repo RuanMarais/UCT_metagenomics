@@ -12,7 +12,8 @@ import pysam
 parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic data. Created by GJK Marais.')
 parser.add_argument('--input_folder_knead', required=True, help='The file path that contains the kneaddata paired '
                                                                 'output files used for kraken analysis')
-parser.add_argument('--input_folder_kraken2', required=True, help='Result folders for kraken2 results')
+parser.add_argument('--input_folder_kraken2_1', required=True, help='Result folder for kraken2 results from database 1')
+parser.add_argument('--input_folder_kraken2_2', required=True, help='Result folder for kraken2 results from database 2')
 parser.add_argument('--output_folder', required=True, help='Result folders will be output to this folder')
 parser.add_argument('--identifier_length', type=int, required=True,
                     help='The string length that identifies the sequencing read')
@@ -29,6 +30,7 @@ formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 handler.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 logger.debug("Targeted read retrieval started")
 
 # Set variables from input
@@ -36,33 +38,47 @@ input_folder_knead = args.input_folder_knead
 output_folder = args.output_folder
 id_length = args.identifier_length
 reference_file = args.reference_file
-kraken2_dir = args.input_folder_kraken2
+kraken2_dir_1 = args.input_folder_kraken2_1
+kraken2_dir_2 = args.input_folder_kraken2_2
 threads = args.threads
 
 # Generate a list with all valid filenames
-file_names_all = services.filename_list_generate('kneaddata_paired_1.fasta', input_folder_knead)
+file_names_all = services.filename_list_generate('.fastq', input_folder_knead)
 
 # Generate a data dict which has the identifier as the key and the paired reads as a tuple
 paired_sorted_dict = services.paired_read_list_generate(id_length,
-                                                        'L001_R1_001_kneaddata_paired_1.fasta',
-                                                        'L001_R1_001_kneaddata_paired_2.fasta',
+                                                        'L001_R1_001_kneaddata_paired_1.fastq',
+                                                        'L001_R1_001_kneaddata_paired_2.fastq',
                                                         file_names_all,
                                                         input_folder_knead)
 
 # Generate krakenfile dict
-kraken2_krakenfiles = {}
-folders_kraken = os.listdir(kraken2_dir)
-directory_paths_kraken = [(os.path.join(kraken2_dir, folder), folder)
+kraken2_krakenfiles_1 = {}
+folders_kraken = os.listdir(kraken2_dir_1)
+directory_paths_kraken = [(os.path.join(kraken2_dir_1, folder), folder)
                           for folder in folders_kraken
-                          if os.path.isdir(os.path.join(kraken2_dir, folder))]
+                          if os.path.isdir(os.path.join(kraken2_dir_1, folder))]
 for directory in directory_paths_kraken:
     logging.debug(f'Kraken2 krakenfile retrieval: {directory}')
     filename_1 = f'{directory[1]}_krakenfile'
     file_1 = os.path.join(directory[0], filename_1)
     if os.path.isfile(file_1):
         logging.debug(f'Kraken2 krakenfile assigned to dictionary: {directory[1]}')
-        kraken2_krakenfiles[directory[1]] = file_1
+        kraken2_krakenfiles_1[directory[1]] = file_1
 
+# Generate krakenfile dict
+kraken2_krakenfiles_2 = {}
+folders_kraken = os.listdir(kraken2_dir_2)
+directory_paths_kraken = [(os.path.join(kraken2_dir_2, folder), folder)
+                          for folder in folders_kraken
+                          if os.path.isdir(os.path.join(kraken2_dir_2, folder))]
+for directory in directory_paths_kraken:
+    logging.debug(f'Kraken2 krakenfile retrieval: {directory}')
+    filename_1 = f'{directory[1]}_krakenfile'
+    file_1 = os.path.join(directory[0], filename_1)
+    if os.path.isfile(file_1):
+        logging.debug(f'Kraken2 krakenfile assigned to dictionary: {directory[1]}')
+        kraken2_krakenfiles_2[directory[1]] = file_1
 
 # Create an empty dictionary to store the data
 data_dict_reference_file = {}
@@ -81,9 +97,10 @@ with open(reference_file, mode='r') as csvfile:
             taxid = row['taxid']
             reference = row['reference']
             reference_prefix = row['reference_prefix']
+            kraken_database = row['kraken_database']
 
             # Create a tuple with 'taxid' and 'reference' and store it as the value for 'identifier' in the dictionary
-            data_dict_reference_file[identifier] = (organism, taxid, reference, reference_prefix)
+            data_dict_reference_file[identifier] = (organism, taxid, reference, reference_prefix, kraken_database)
     except:
         logger.debug("Data retrieval from reference file failed")
 
@@ -94,7 +111,8 @@ for key, value in data_dict_reference_file.items():
 
 
 # Retrieve detected reads
-extract_kraken_reads_commands = extract_from_krakenfile.extract_targeted_reads(kraken2_krakenfiles,
+extract_kraken_reads_commands = extract_from_krakenfile.extract_targeted_reads(kraken2_krakenfiles_1,
+                                                                               kraken2_krakenfiles_2,
                                                                                data_dict_reference_file,
                                                                                paired_sorted_dict,
                                                                                output_folder)

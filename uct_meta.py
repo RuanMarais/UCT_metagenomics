@@ -44,7 +44,8 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-logger.debug("Metagenomics pipeline started")
+logger.setLevel(logging.DEBUG)
+logger.info("Metagenomics pipeline started")
 
 # Assign database paths
 if trimmomatic_path is None:
@@ -90,7 +91,7 @@ directories_to_create = [knead_directory,
 for directory in directories_to_create:
     if not os.path.exists(directory):
         os.makedirs(directory)
-        logger.debug(f'Output directory created: {directory}')
+        logger.info(f'Output directory created: {directory}')
 
 # Generate kneaddata commands
 kneaddata_commands = knead_data_run.generate_kneaddata_commands(paired_sorted_dict,
@@ -103,9 +104,9 @@ kneaddata_commands = knead_data_run.generate_kneaddata_commands(paired_sorted_di
 for knead_command in kneaddata_commands:
     try:
         subprocess.run(knead_command, check=True)
-        logging.debug(f'Kneaddata command run successful: {knead_command}')
+        logging.info(f'Kneaddata command run successful: {knead_command}')
     except subprocess.CalledProcessError as e:
-        logging.debug(f'Kneaddata command failed: {knead_command}')
+        logging.error(f'Kneaddata command failed: {knead_command}')
 
 # Generate kraken2 source directory
 kraken2_source_files = {}
@@ -114,7 +115,7 @@ directory_paths_knead = [(os.path.join(knead_directory, folder), folder)
                          for folder in folders_knead
                          if os.path.isdir(os.path.join(knead_directory, folder))]
 for directory in directory_paths_knead:
-    logging.debug(f'Kneaddata read output retrieval: {directory}')
+    logging.info(f'Kneaddata read output retrieval: {directory}')
     filename_1 = f'{directory[1]}_L001_R1_001_kneaddata_paired_1.fastq'
     filename_2 = f'{directory[1]}_L001_R1_001_kneaddata_paired_2.fastq'
     file_1 = os.path.join(directory[0], filename_1)
@@ -122,7 +123,7 @@ for directory in directory_paths_knead:
     copy_path_1 = os.path.join(kraken_source_directory, filename_1)
     copy_path_2 = os.path.join(kraken_source_directory, filename_2)
     if os.path.isfile(file_1) and os.path.isfile(file_2):
-        logging.debug(f'Kraken2 source files retrieved from: {directory}')
+        logging.info(f'Kraken2 source files retrieved from: {directory}')
         shutil.copy(file_1, kraken_source_directory)
         shutil.copy(file_2, kraken_source_directory)
     kraken2_source_files[directory[1]] = (copy_path_1, copy_path_2)
@@ -142,13 +143,13 @@ kraken_commands_list = [kraken2_commands_db1, kraken2_commands_db2]
 
 # Run kraken2 commands
 for db, kraken_commands in enumerate(kraken_commands_list):
-    logging.debug(f'Kraken2 db{db+1} run')
+    logging.info(f'Kraken2 db{db+1} run')
     for command in kraken_commands:
         try:
             subprocess.run(command, check=True)
-            logging.debug(f'Kraken2 command db{db+1} successful: {command}')
+            logging.info(f'Kraken2 command db{db+1} successful: {command}')
         except subprocess.CalledProcessError as e:
-            logging.debug(f'Kraken2 command db{db+1} failed: {command}')
+            logging.error(f'Kraken2 command db{db+1} failed: {command}')
 
 # Create krakenfile dictionary to be used to extract relevant krakenfiles
 krakenfiles = {}
@@ -160,32 +161,38 @@ for db, krakenfolder in enumerate(krakenresults_folders):
                      for folder in folders_results
                      if os.path.isdir(os.path.join(krakenfolder, folder))]
     for directory in paths_results:
-        logging.debug(f'Krakenfile retrieval for db{db+1}: {directory}')
+        logging.info(f'Krakenfile retrieval for db{db+1}: {directory}')
         krakenfile_name = f'{directory[1]}_krakenfile'
         file_path_krakenfile = os.path.join(directory[0], krakenfile_name)
-        query_file_path_1 = os.path.join(kraken_source_directory, f'{directory[1]}_L001_R1_001_kneaddata_paired_1.fasta')
-        query_file_path_2 = os.path.join(kraken_source_directory, f'{directory[1]}_L001_R1_001_kneaddata_paired_2.fasta')
+        query_file_path_1 = os.path.join(kraken_source_directory,
+                                         f'{directory[1]}_L001_R1_001_kneaddata_paired_1.fastq')
+        query_file_path_2 = os.path.join(kraken_source_directory,
+                                         f'{directory[1]}_L001_R1_001_kneaddata_paired_2.fastq')
         if os.path.isfile(file_path_krakenfile):
-            logging.debug(f'krakenfile added to krakenfiles dictionary: {directory[1]}')
+            logging.info(f'krakenfile added to krakenfiles dictionary: {directory[1]}')
         krakenfile_dict[directory[1]] = (file_path_krakenfile, query_file_path_1, query_file_path_2)
     krakenfiles[db] = krakenfile_dict
 
 # Retrieve unassigned reads
 for db, krakenfiles_dict in krakenfiles.items():
-    logging.debug(f'Extracting unassigned reads for db{db+1}')
+    logging.info(f'Extracting unassigned reads for db{db+1}')
     for sample, krakenfile in krakenfiles_dict.items():
-        logging.debug(f'Extracting unassigned reads for: {sample}')
+        logging.info(f'Extracting unassigned reads for: {sample}')
         output_directory = os.path.join(extract_db_list[db], sample)
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
-            logging.debug(f'Output directory created: {output_directory}')
-        extract_reads_command = extract.extract_reads_command(krakenfile[0], 'Unassigned_reads', '0', krakenfile[1],
-                                                              krakenfile[2], output_directory)
+            logging.info(f'Output directory created: {output_directory}')
+        extract_reads_command = extract.extract_reads_command(krakenfile[0],
+                                                              'Unassigned_reads',
+                                                              '0',
+                                                              krakenfile[1],
+                                                              krakenfile[2],
+                                                              output_directory)
         try:
-            subprocess.run(extract_reads_command, check=True)
-            logging.debug(f'Extracting unassigned reads successful: {extract_reads_command}')
+            subprocess.run(extract_reads_command[0], check=True)
+            logging.info(f'Extracting unassigned reads successful: {extract_reads_command}')
         except subprocess.CalledProcessError as e:
-            logging.debug(f'Extracting unassigned reads failed: {extract_reads_command}')
+            logging.error(f'Extracting unassigned reads failed: {extract_reads_command}')
 
 # Generate contigs and interleaved file for unassigned reads
 # Create output file structure
@@ -197,35 +204,36 @@ for db, reads_folder in enumerate(extract_db_list):
                      for folder in folders_extract
                      if os.path.isdir(os.path.join(reads_folder, folder))]
     for directory in paths_extract:
-        logging.debug(f'Generating contigs for: {directory[1]}')
+        logging.info(f'Generating contigs for: {directory[1]}')
         output_directory = os.path.join(directory[0], 'Unassigned_reads')
         unassigned_read_1 = os.path.join(output_directory, 'Unassigned_reads_1.fastq')
         unassigned_read_2 = os.path.join(output_directory, 'Unassigned_reads_2.fastq')
         contigs_folder = os.path.join(output_directory, 'contigs')
         if not os.path.exists(contigs_folder):
             os.makedirs(contigs_folder)
-            logging.debug(f'Contigs directory created: {contigs_folder}')
+            logging.info(f'Contigs directory created: {contigs_folder}')
 
         # Spades command
         contigs_command = spades.meta_contigs(unassigned_read_1, unassigned_read_2, contigs_folder)
         try:
             subprocess.run(contigs_command, check=True)
-            logging.debug(f'Generating contigs successful: {contigs_command}')
+            logging.info(f'Generating contigs successful: {contigs_command}')
         except subprocess.CalledProcessError as e:
-            logging.debug(f'Generating contigs failed: {contigs_command}')
+            logging.error(f'Generating contigs failed: {contigs_command}')
 
         # create interleaved files
         interleave_command = interleave.interleave_paired_reads(unassigned_read_1, unassigned_read_2,
-                                                                os.path.join(output_directory, 'interleaved.fasta'))
+                                                                os.path.join(output_directory,
+                                                                             'interleaved.fasta.assembled.fastq'))
 
         try:
             subprocess.run(interleave_command, check=True)
-            logging.debug(f'Interleaving reads successful: {interleave_command}')
+            logging.info(f'Interleaving reads successful: {interleave_command}')
         except subprocess.CalledProcessError as e:
-            logging.debug(f'Interleaving reads failed: {interleave_command}')
+            logging.error(f'Interleaving reads failed: {interleave_command}')
 
         contigs_file = os.path.join(contigs_folder, 'contigs.fasta')
-        interleaved_file = os.path.join(output_directory, 'interleaved.fasta')
+        interleaved_file = os.path.join(output_directory, 'interleaved.fasta.assembled.fastq')
         if os.path.isfile(contigs_file) and os.path.isfile(interleaved_file):
             unassigned_local[directory[1]] = (contigs_file, interleaved_file)
         elif os.path.isfile(interleaved_file):
@@ -239,9 +247,9 @@ create_db_command = diamond.diamond_build_db(diamond_db_path, output_folder, 'di
 created_diamond_db = create_db_command[1]
 try:
     subprocess.run(create_db_command[0], check=True)
-    logging.debug(f'Create diamond database: {create_db_command[0]}')
+    logging.info(f'Create diamond database: {create_db_command[0]}')
 except subprocess.CalledProcessError as e:
-    logging.debug(f'Create diamond database failed: {create_db_command[0]}')
+    logging.error(f'Create diamond database failed: {create_db_command[0]}')
 
 # Run diamond on unassigned reads
 for db, unassigned_dict in unassigned_dict.items():
@@ -249,7 +257,7 @@ for db, unassigned_dict in unassigned_dict.items():
     if not os.path.exists(db_folder):
         os.makedirs(db_folder)
     for sample, unassigned_files in unassigned_dict.items():
-        logging.debug(f'Running diamond on unassigned reads for: {sample}')
+        logging.info(f'Running diamond on unassigned reads for: {sample}')
         output_directory = os.path.join(db_folder, sample)
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
@@ -260,9 +268,9 @@ for db, unassigned_dict in unassigned_dict.items():
                                                                f'{sample}_contigs')
             try:
                 subprocess.run(diamond_command_contigs, check=True)
-                logging.debug(f'Diamond command successful: {diamond_command_contigs}')
+                logging.info(f'Diamond command successful: {diamond_command_contigs}')
             except subprocess.CalledProcessError as e:
-                logging.debug(f'Diamond command failed: {diamond_command_contigs}')
+                logging.error(f'Diamond command failed: {diamond_command_contigs}')
         if unassigned_files[1] is not None:
             diamond_command_interleaved = diamond.diamond_classify(created_diamond_db,
                                                                    unassigned_files[1],
@@ -270,7 +278,7 @@ for db, unassigned_dict in unassigned_dict.items():
                                                                    f'{sample}_interleaved')
             try:
                 subprocess.run(diamond_command_interleaved, check=True)
-                logging.debug(f'Diamond command successful: {diamond_command_interleaved}')
+                logging.info(f'Diamond command successful: {diamond_command_interleaved}')
             except subprocess.CalledProcessError as e:
-                logging.debug(f'Diamond command failed: {diamond_command_interleaved}')
+                logging.error(f'Diamond command failed: {diamond_command_interleaved}')
 

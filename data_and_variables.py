@@ -7,3 +7,7 @@ diamond_db_path = ''
 
 # Package paths
 trimmomatic_path = ''
+
+# kraken2 Rank codes
+species = 'S'
+genus = 'G'
