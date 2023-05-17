@@ -6,8 +6,10 @@ General helper functions for the pipeline
 import os
 
 
-def index_reference(reference_path, reference_prefix):
-    return ['bowtie2-build', reference_path, reference_prefix]
+def index_reference(reference_path, reference_prefix, location):
+    ref_loc = os.path.join(location, reference_path)
+    ref_out = os.path.join(location, reference_prefix)
+    return ['bowtie2-build', ref_loc, ref_out]
 
 
 def generate_bowtie2_command(organism, reference, read_1, read_2, output_dir, threads):
@@ -21,7 +23,8 @@ def generate_bowtie2_command(organism, reference, read_1, read_2, output_dir, th
     cmd_sort = ['samtools', 'sort', '-o', bam_file]
     cmd_index = ['samtools', 'index', bam_file]
 
-    return {'out': output_dir,
+    return {'organism': organism,
+            'out': output_dir,
             'align': cmd_align,
             'view': cmd_view,
             'sort': cmd_sort,
