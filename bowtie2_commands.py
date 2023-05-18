@@ -15,7 +15,8 @@ def index_reference(reference_path, reference_prefix, location):
 def generate_bowtie2_command(organism, reference, read_1, read_2, output_dir, threads):
     # Align reads with Bowtie2
     sam_file = os.path.join(output_dir, f'{organism}.sam')
-    cmd_align = ['bowtie2', '-x', reference, '-1', read_1, '-2', read_2, '-S', sam_file, '-p', str(threads)]
+    cmd_align = ['bowtie2', '-x', reference, '-1', read_1, '-2', read_2, '-S', sam_file, '-p', str(threads),
+                 '--very-sensitive']
 
     # Convert SAM to BAM, sort and index with samtools
     bam_file = os.path.join(output_dir, f'{organism}.bam')
