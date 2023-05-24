@@ -17,7 +17,7 @@ def filename_list_generate(file_identifier, folder_path):
     return filenames_output
 
 
-def paired_read_list_generate(id_length, file_id_r1, file_id_r2, filename_list, file_folder):
+def paired_read_list_generate(id_length, file_length, file_id_r1, file_id_r2, filename_list, file_folder):
     # Separate filenames by id
     sample_sorted_dict = defaultdict(list)
     for file in filename_list:
@@ -38,6 +38,6 @@ def paired_read_list_generate(id_length, file_id_r1, file_id_r2, filename_list, 
             read_out_1 = os.path.join(file_folder, read_1)
             read_out_2 = os.path.join(file_folder, read_2)
             output = (read_out_1, read_out_2)
-            paired_sorted_dict[key] = output
+            paired_sorted_dict[read_1[:file_length]] = output
 
     return paired_sorted_dict

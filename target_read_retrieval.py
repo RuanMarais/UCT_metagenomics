@@ -9,6 +9,7 @@ import subprocess
 import pysam
 from collections import defaultdict
 import numpy as np
+import reference_fragmentation as frag
 
 # The input file for the pipeline
 parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic data. Created by GJK Marais.')
@@ -149,6 +150,10 @@ for organism, reference_data in organism_reference_dict.items():
         logger.debug(f'Indexing command: {command}')
     except subprocess.CalledProcessError as e:
         logger.debug(f'Indexing command failed: {command}')
+
+    # Generate reference fragmented reads and kraken analysis
+    command_reference_reads = frag.generate_pirs_commands()
+
 
 # Generate alignment commands dictionary
 command_dict_defaultdict = defaultdict(list)

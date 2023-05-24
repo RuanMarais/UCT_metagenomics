@@ -7,8 +7,9 @@ Kraken2 report interpretation
 import csv
 import os
 
+
 def generate_kraken2_report_csv(report, output_directory):
-# Open the Kraken 2 report file
+    # Open the Kraken 2 report file
     with open(report, 'r') as report_file:
         # Open the output CSV file
         report_csv = os.path.join(output_directory, 'kraken2_report_csv.csv')
@@ -32,5 +33,3 @@ def generate_kraken2_report_csv(report, output_directory):
                 row_dict = dict(zip(headers, fields))
                 data.append(row_dict)
     return data
-
-
