@@ -10,6 +10,9 @@ import pysam
 from collections import defaultdict
 import numpy as np
 import reference_fragmentation as frag
+import shutil
+import meta_analysis as meta
+import data_and_variables as _dv
 
 # The input file for the pipeline
 parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic data. Created by GJK Marais.')
@@ -25,6 +28,11 @@ parser.add_argument('--threads', type=int, default=1,
 parser.add_argument('--reference_file', required=True, help='The csv file that refers to the taxid and reference to '
                                                             'use for each identifier')
 parser.add_argument('--references_directory', required=True, help='Directory for ncbi references')
+parser.add_argument('--pirs_env', default=None, help='conda environment for pirs')
+parser.add_argument('--trimmomatic', default=None, help='trimmomatic path')
+parser.add_argument('--kraken2_db1', default=None, help='kraken2 db1 path')
+parser.add_argument('--kraken2_db2', default=None, help='kraken2 db2 path')
+parser.add_argument('--kneaddata_db', default=None, help='knead_data path')
 args = parser.parse_args()
 
 # Logging
@@ -49,6 +57,11 @@ kraken2_dir_1 = args.input_folder_kraken2_1
 kraken2_dir_2 = args.input_folder_kraken2_2
 references_directory = args.references_directory
 threads = args.threads
+pirs_env = args.pirs_env
+trimmomatic_path = args.trimmomatic
+kraken2_db1 = args.kraken2_db1
+kraken2_db2 = args.kraken2_db2
+kneaddata_db = args.kneaddata_db
 
 # Generate a list with all valid filenames
 file_names_all = services.filename_list_generate('.fastq', input_folder_knead)
@@ -90,6 +103,7 @@ for directory in directory_paths_kraken:
 
 # Create an empty dictionary to store the data
 data_dict_reference_file = defaultdict(list)
+reference_dict = {}
 
 with open(reference_file, mode='r', encoding='utf-8-sig') as csvfile:
     logger.debug("Data retrieval from reference file started")
@@ -109,6 +123,7 @@ with open(reference_file, mode='r', encoding='utf-8-sig') as csvfile:
 
             # Create a tuple with 'taxid' and 'reference' and store it as the value for 'identifier' in the dictionary
             data_dict_reference_file[identifier].append([organism, taxid, reference, reference_prefix, kraken_database])
+            reference_dict[reference] = (organism, reference_prefix, kraken_database)
     except:
         logger.debug("Data retrieval from reference file failed")
 
@@ -141,6 +156,85 @@ for extraction_data in extract_kraken_reads_commands:
     except subprocess.CalledProcessError as e:
         logger.debug(f'krakenfile extraction command failed: {extraction_data[1]}')
 
+# Generate fragmented read folder
+pirs_commands = frag.generate_pirs_commands(references_directory, pirs_env, 10, 100, 180, 30)
+for command in pirs_commands:
+    try:
+        subprocess.run(command, check=True)
+        logger.debug(f'Pirs synthetic read generation: {command}')
+    except subprocess.CalledProcessError as e:
+        logger.debug(f'Pirs synthetic read generation failed: {command}')
+
+# Run kraken2 on fragmented reads
+fragmented_reads_dict = {}
+pirs_dir = os.path.join(references_directory, 'pirs_output')
+if os.path.isdir(pirs_dir):
+    logger.debug(f'Pirs output directory found: {pirs_dir}')
+    files_pirs = os.listdir(pirs_dir)
+    directory_paths_pirs = [(os.path.join(pirs_dir, ref), ref)
+                            for ref in files_pirs
+                            if os.path.isdir(os.path.join(pirs_dir, ref))]
+    source_dir_kraken = os.path.join(pirs_dir, 'synthetic_reads')
+    if not os.path.exists(source_dir_kraken):
+        os.makedirs(source_dir_kraken)
+    for directory in directory_paths_pirs:
+        reference_org_name = reference_dict[directory[1]][1]
+        kraken_db = reference_dict[directory[1]][2]
+        organism_name = reference_dict[directory[1]][0]
+        org_file = os.path.join(source_dir_kraken, reference_org_name)
+        if not os.path.exists(org_file):
+            os.makedirs(org_file)
+        read_1_target = os.path.join(directory[0], f'{directory[1]}_100_180_1.fq.gz')
+        read_2_target = os.path.join(directory[0], f'{directory[1]}_100_180_2.fq.gz')
+
+        if os.path.isfile(read_1_target) and os.path.isfile(read_2_target):
+            read_1_out = os.path.join(org_file, f'{reference_org_name}_1.fastq.gz')
+            read_2_out = os.path.join(org_file, f'{reference_org_name}_2.fastq.gz')
+            shutil.move(read_1_target, read_1_out)
+            shutil.move(read_2_target, read_2_out)
+            fragmented_reads_dict[reference_org_name] = (org_file, organism_name, kraken_db)
+            logger.debug(f'Pirs synthetic reads moved: {directory[1]}')
+        else:
+            logger.debug(f'Pirs synthetic reads not found: {directory[1]}')
+else:
+    logger.debug(f'Pirs output directory not found: {pirs_dir}')
+
+# Run kraken2 on fragmented reads
+alignment_dict_fragmented = {}
+for organism_key, fragmented_reads_data in fragmented_reads_dict.items():
+    input_folder = fragmented_reads_data[0]
+    organism_name = fragmented_reads_data[1]
+    kraken_db = fragmented_reads_data[2]
+    id_length = len(organism_key)
+    file_length = id_length + 1
+    gen_id = 'fastq.gz'
+    r1_id = '_1.fastq.gz'
+    r2_id = '_2.fastq.gz'
+    if int(kraken_db) == 1:
+        kraken2_db1_in = kraken2_db1
+        kraken2_db2_in = None
+    elif int(kraken_db) == 2:
+        kraken2_db1_in = None
+        kraken2_db2_in = kraken2_db2
+    merged_reads = meta.meta_analysis(input_folder,
+                                      id_length,
+                                      input_folder,
+                                      threads,
+                                      trimmomatic_path,
+                                      kneaddata_db,
+                                      logger,
+                                      gen_id,
+                                      r1_id,
+                                      r2_id,
+                                      file_length,
+                                      kraken2_db1_in,
+                                      kraken2_db2_in,
+                                      diamond_db_path=None,
+                                      targeted=organism_key,
+                                      target_name=organism_name,
+                                      target_save_path=input_folder,
+                                      level=_dv.species)
+
 
 # index references
 for organism, reference_data in organism_reference_dict.items():
@@ -150,10 +244,6 @@ for organism, reference_data in organism_reference_dict.items():
         logger.debug(f'Indexing command: {command}')
     except subprocess.CalledProcessError as e:
         logger.debug(f'Indexing command failed: {command}')
-
-    # Generate reference fragmented reads and kraken analysis
-    command_reference_reads = frag.generate_pirs_commands()
-
 
 # Generate alignment commands dictionary
 command_dict_defaultdict = defaultdict(list)

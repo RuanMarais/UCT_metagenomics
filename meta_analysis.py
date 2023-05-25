@@ -93,7 +93,7 @@ def meta_analysis(input_folder,
     # Generate kneaddata commands
     kneaddata_commands = knead_data_run.generate_kneaddata_commands(paired_sorted_dict,
                                                                     knead_directory,
-                                                                    threads,
+                                                                    str(threads),
                                                                     trimmomatic_path,
                                                                     kneaddata_db_path)
 
@@ -131,7 +131,7 @@ def meta_analysis(input_folder,
     if kraken2_db1_path is not None:
         kraken2_commands_db1 = kraken2.generate_kraken2_commands(kraken2_source_files,
                                                                  kraken2_directory_db1,
-                                                                 threads,
+                                                                 str(threads),
                                                                  kraken2_db1_path)
         kraken_commands_list.append((1, kraken2_commands_db1))
         krakenresults_folders.append((1, kraken2_directory_db1))
@@ -139,7 +139,7 @@ def meta_analysis(input_folder,
     if kraken2_db2_path is not None:
         kraken2_commands_db2 = kraken2.generate_kraken2_commands(kraken2_source_files,
                                                                  kraken2_directory_db2,
-                                                                 threads,
+                                                                 str(threads),
                                                                  kraken2_db2_path)
         kraken_commands_list.append((2, kraken2_commands_db2))
         krakenresults_folders.append((2, kraken2_directory_db2))
