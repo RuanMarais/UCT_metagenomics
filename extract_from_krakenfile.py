@@ -16,7 +16,11 @@ def extract_reads_command(krakenfile_path, org, taxid, input_read_1_path, input_
             os.path.join(org_output, org + '_2.fastq')], output_paths, org_output
 
 
-def extract_targeted_reads(krakenfile_dict_1, krakenfile_dict_2, target_dict, raw_reads_dict, output_dir,
+def extract_targeted_reads(krakenfile_dict_1,
+                           krakenfile_dict_2,
+                           target_dict,
+                           raw_reads_dict,
+                           output_dir,
                            reference_folder):
     output_data = []
     for id_item, reference_data_items in target_dict.items():

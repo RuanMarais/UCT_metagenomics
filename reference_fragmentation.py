@@ -1,6 +1,6 @@
 """
 ******************************************************************************************************************
-Fragmentation of references for the generation of simulated reads that is run through the pipeline
+Generation of simulated reads that is run through the pipeline
 ******************************************************************************************************************
 """
 import os

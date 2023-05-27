@@ -31,7 +31,7 @@ def extract_reads(taxid, filename, krakenfiles, logger, extract_db_list=None, ou
                                                                   output_directory)
             try:
                 subprocess.run(extract_reads_command[0], check=True)
-                logger.info(f'Extracting {filename} reads successful: {extract_reads_command}')
+                logger.info(f'Extracting {filename} reads successful')
             except subprocess.CalledProcessError as e:
                 logger.error(f'Extracting {filename} reads failed: {extract_reads_command}')
 
@@ -52,7 +52,6 @@ def meta_analysis(input_folder,
                   diamond_db_path=None,
                   targeted=None,
                   target_name=None,
-                  target_save_path=None,
                   level=None):
     # Generate a list with all valid filenames
     file_names_all = services.filename_list_generate(general_filepath_id_string, input_folder)
@@ -101,7 +100,7 @@ def meta_analysis(input_folder,
     for knead_command in kneaddata_commands:
         try:
             subprocess.run(knead_command, check=True)
-            logger.info(f'Kneaddata command run successful: {knead_command}')
+            logger.info(f'Kneaddata command run successful')
         except subprocess.CalledProcessError as e:
             logger.error(f'Kneaddata command failed: {knead_command}')
 
@@ -150,7 +149,7 @@ def meta_analysis(input_folder,
         for command in kraken_commands[1]:
             try:
                 subprocess.run(command, check=True)
-                logger.info(f'Kraken2 command db{kraken_commands[0]} successful: {command}')
+                logger.info(f'Kraken2 command db{kraken_commands[0]} successful')
             except subprocess.CalledProcessError as e:
                 logger.error(f'Kraken2 command db{kraken_commands[0]} failed: {command}')
 
@@ -185,146 +184,159 @@ def meta_analysis(input_folder,
                                                      directory[0])
             krakenfiles[krakenfolder[0]] = krakenfile_dict
 
-    if diamond_db_path is not None and targeted is None:
-        extract_reads('0', 'Unassigned_reads', krakenfiles, logger, extract_db_list=extract_db_list)
-        # Generate contigs and interleaved file for unassigned reads
-        # Create output file structure
-        unassigned_dict = {}
-        for db, reads_folder in enumerate(extract_db_list):
-            unassigned_local = {}
-            folders_extract = os.listdir(reads_folder)
-            paths_extract = [(os.path.join(reads_folder, folder), folder)
-                             for folder in folders_extract
-                             if os.path.isdir(os.path.join(reads_folder, folder))]
-            for directory in paths_extract:
-                logger.info(f'Generating contigs for: {directory[1]}')
-                output_directory = os.path.join(directory[0], 'Unassigned_reads')
-                unassigned_read_1 = os.path.join(output_directory, 'Unassigned_reads_1.fastq')
-                unassigned_read_2 = os.path.join(output_directory, 'Unassigned_reads_2.fastq')
-                contigs_folder = os.path.join(output_directory, 'contigs')
-                if not os.path.exists(contigs_folder):
-                    os.makedirs(contigs_folder)
-                    logger.info(f'Contigs directory created: {contigs_folder}')
+        if diamond_db_path is not None and targeted is None:
+            extract_reads('0', 'Unassigned_reads', krakenfiles, logger, extract_db_list=extract_db_list)
+            # Generate contigs and interleaved file for unassigned reads
+            # Create output file structure
+            unassigned_dict = {}
+            for db, reads_folder in enumerate(extract_db_list):
+                unassigned_local = {}
+                folders_extract = os.listdir(reads_folder)
+                paths_extract = [(os.path.join(reads_folder, folder), folder)
+                                 for folder in folders_extract
+                                 if os.path.isdir(os.path.join(reads_folder, folder))]
+                for directory in paths_extract:
+                    logger.info(f'Generating contigs for: {directory[1]}')
+                    output_directory = os.path.join(directory[0], 'Unassigned_reads')
+                    unassigned_read_1 = os.path.join(output_directory, 'Unassigned_reads_1.fastq')
+                    unassigned_read_2 = os.path.join(output_directory, 'Unassigned_reads_2.fastq')
+                    contigs_folder = os.path.join(output_directory, 'contigs')
+                    if not os.path.exists(contigs_folder):
+                        os.makedirs(contigs_folder)
+                        logger.info(f'Contigs directory created: {contigs_folder}')
 
-                # Spades command
-                contigs_command = spades.meta_contigs(unassigned_read_1, unassigned_read_2, contigs_folder)
-                try:
-                    subprocess.run(contigs_command, check=True)
-                    logger.info(f'Generating contigs successful: {contigs_command}')
-                except subprocess.CalledProcessError as e:
-                    logger.error(f'Generating contigs failed: {contigs_command}')
-
-                # create interleaved files
-                interleave_command = interleave.interleave_paired_reads(unassigned_read_1, unassigned_read_2,
-                                                                        os.path.join(output_directory,
-                                                                                     'interleaved.fasta.assembled.fastq'))
-
-                try:
-                    subprocess.run(interleave_command, check=True)
-                    logger.info(f'Interleaving reads successful: {interleave_command}')
-                except subprocess.CalledProcessError as e:
-                    logger.error(f'Interleaving reads failed: {interleave_command}')
-
-                contigs_file = os.path.join(contigs_folder, 'contigs.fasta')
-                interleaved_file = os.path.join(output_directory, 'interleaved.fasta.assembled.fastq')
-                if os.path.isfile(contigs_file) and os.path.isfile(interleaved_file):
-                    unassigned_local[directory[1]] = (contigs_file, interleaved_file)
-                elif os.path.isfile(interleaved_file):
-                    unassigned_local[directory[1]] = (None, interleaved_file)
-                else:
-                    unassigned_local[directory[1]] = (None, None)
-            unassigned_dict[db] = unassigned_local
-
-        # Create diamond database
-        create_db_command = diamond.diamond_build_db(diamond_db_path, output_folder, 'diamond_db')
-        created_diamond_db = create_db_command[1]
-        try:
-            subprocess.run(create_db_command[0], check=True)
-            logger.info(f'Create diamond database: {create_db_command[0]}')
-        except subprocess.CalledProcessError as e:
-            logger.error(f'Create diamond database failed: {create_db_command[0]}')
-
-        # Run diamond on unassigned reads
-        for db, unassigned_dict in unassigned_dict.items():
-            db_folder = os.path.join(diamond_output, f'kraken_db{db + 1}')
-            if not os.path.exists(db_folder):
-                os.makedirs(db_folder)
-            for sample, unassigned_files in unassigned_dict.items():
-                logger.info(f'Running diamond on unassigned reads for: {sample}')
-                output_directory = os.path.join(db_folder, sample)
-                if not os.path.exists(output_directory):
-                    os.makedirs(output_directory)
-                if unassigned_files[0] is not None:
-                    diamond_command_contigs = diamond.diamond_classify(created_diamond_db,
-                                                                       unassigned_files[0],
-                                                                       output_directory,
-                                                                       f'{sample}_contigs')
+                    # Spades command
+                    contigs_command = spades.meta_contigs(unassigned_read_1, unassigned_read_2, contigs_folder)
                     try:
-                        subprocess.run(diamond_command_contigs, check=True)
-                        logger.info(f'Diamond command successful: {diamond_command_contigs}')
+                        subprocess.run(contigs_command, check=True)
+                        logger.info(f'Generating contigs successful')
                     except subprocess.CalledProcessError as e:
-                        logger.error(f'Diamond command failed: {diamond_command_contigs}')
-                if unassigned_files[1] is not None:
-                    diamond_command_interleaved = diamond.diamond_classify(created_diamond_db,
-                                                                           unassigned_files[1],
-                                                                           output_directory,
-                                                                           f'{sample}_interleaved')
-                    try:
-                        subprocess.run(diamond_command_interleaved, check=True)
-                        logger.info(f'Diamond command successful: {diamond_command_interleaved}')
-                    except subprocess.CalledProcessError as e:
-                        logger.error(f'Diamond command failed: {diamond_command_interleaved}')
-    elif diamond_db_path is None and targeted is not None:
-        retrieved_files_r1 = []
-        retrieved_files_r2 = []
-        taxid_list = []
-        parse_data = []
-        read_1 = None
-        read_2 = None
-        krakenfile_retrieve = None
-        for db, kraken_reports in krakenfiles.items():
-            if targeted in kraken_reports:
-                report_path = kraken_reports[targeted][3]
-                parse_data.extend(parse.generate_kraken2_report_csv(report_path, kraken_reports[targeted][4]))
-                read_1 = kraken_reports[targeted][1]
-                read_2 = kraken_reports[targeted][2]
-                krakenfile_retrieve = kraken_reports[targeted][0]
-        for classification_item in parse_data:
-            if classification_item['Rank code'] == level:
-                if int(classification_item['Number of reads assigned directly']) > 0:
-                    if target_name in classification_item['Scientific name']:
-                        taxid_list.append(classification_item['Taxid'])
+                        logger.error(f'Generating contigs failed: {contigs_command}')
 
-        for taxid in taxid_list:
-            logger.info(f'Extracting reads for: {taxid}')
-            extract_reads_command = extract.extract_reads_command(krakenfile_retrieve,
-                                                                  f'{target_name}_{taxid}',
-                                                                  taxid,
-                                                                  read_1,
-                                                                  read_2,
-                                                                  target_save_path)
-            retrieved_files_r1.append(extract_reads_command[1][0])
-            retrieved_files_r2.append(extract_reads_command[1][1])
+                    # create interleaved files
+                    interleave_command = interleave.interleave_paired_reads(unassigned_read_1, unassigned_read_2,
+                                                                            os.path.join(output_directory,
+                                                                                         'interleaved.fasta.assembled.fastq'))
+
+                    try:
+                        subprocess.run(interleave_command, check=True)
+                        logger.info(f'Interleaving reads successful')
+                    except subprocess.CalledProcessError as e:
+                        logger.error(f'Interleaving reads failed: {interleave_command}')
+
+                    contigs_file = os.path.join(contigs_folder, 'contigs.fasta')
+                    interleaved_file = os.path.join(output_directory, 'interleaved.fasta.assembled.fastq')
+                    if os.path.isfile(contigs_file) and os.path.isfile(interleaved_file):
+                        unassigned_local[directory[1]] = (contigs_file, interleaved_file)
+                    elif os.path.isfile(interleaved_file):
+                        unassigned_local[directory[1]] = (None, interleaved_file)
+                    else:
+                        unassigned_local[directory[1]] = (None, None)
+                unassigned_dict[db] = unassigned_local
+
+            # Create diamond database
+            create_db_command = diamond.diamond_build_db(diamond_db_path, output_folder, 'diamond_db')
+            created_diamond_db = create_db_command[1]
             try:
-                subprocess.run(extract_reads_command[0], check=True)
-                logger.info(f'Extracting {taxid} reads successful: {extract_reads_command}')
+                subprocess.run(create_db_command[0], check=True)
+                logger.info(f'Create diamond database successful')
             except subprocess.CalledProcessError as e:
-                logger.error(f'Extracting {taxid} reads failed: {extract_reads_command}')
+                logger.error(f'Create diamond database failed: {create_db_command[0]}')
 
-        read_merge_1 = os.path.join(target_save_path, f'{target_name}_R1.fastq')
-        read_merge_2 = os.path.join(target_save_path, f'{target_name}_R2.fastq')
+            # Run diamond on unassigned reads
+            for db, unassigned_dict in unassigned_dict.items():
+                db_folder = os.path.join(diamond_output, f'kraken_db{db + 1}')
+                if not os.path.exists(db_folder):
+                    os.makedirs(db_folder)
+                for sample, unassigned_files in unassigned_dict.items():
+                    logger.info(f'Running diamond on unassigned reads for: {sample}')
+                    output_directory = os.path.join(db_folder, sample)
+                    if not os.path.exists(output_directory):
+                        os.makedirs(output_directory)
+                    if unassigned_files[0] is not None:
+                        diamond_command_contigs = diamond.diamond_classify(created_diamond_db,
+                                                                           unassigned_files[0],
+                                                                           output_directory,
+                                                                           f'{sample}_contigs')
+                        try:
+                            subprocess.run(diamond_command_contigs, check=True)
+                            logger.info(f'Diamond command successful')
+                        except subprocess.CalledProcessError as e:
+                            logger.error(f'Diamond command failed: {diamond_command_contigs}')
+                    if unassigned_files[1] is not None:
+                        diamond_command_interleaved = diamond.diamond_classify(created_diamond_db,
+                                                                               unassigned_files[1],
+                                                                               output_directory,
+                                                                               f'{sample}_interleaved')
+                        try:
+                            subprocess.run(diamond_command_interleaved, check=True)
+                            logger.info(f'Diamond command successful')
+                        except subprocess.CalledProcessError as e:
+                            logger.error(f'Diamond command failed: {diamond_command_interleaved}')
+        elif diamond_db_path is None and targeted is not None:
+            retrieved_files_r1 = []
+            retrieved_files_r2 = []
+            taxid_list = []
+            parse_data = []
+            read_1 = None
+            read_2 = None
+            krakenfile_retrieve = None
+            if kraken2_db1_path is not None:
+                save_path = extracted_reads_db1_directory
+            elif kraken2_db2_path is not None:
+                save_path = extracted_reads_db2_directory
 
-        with open(read_merge_1, 'w') as outfile:
-            for fname in retrieved_files_r1:
-                with open(fname) as infile:
-                    for line in infile:
-                        outfile.write(line)
-        with open(read_merge_2, 'w') as outfile:
-            for fname in retrieved_files_r2:
-                with open(fname) as infile:
-                    for line in infile:
-                        outfile.write(line)
+            for db, kraken_reports in krakenfiles.items():
+                key_item = f'{targeted}_1'
+                if key_item in kraken_reports:
+                    report_path = kraken_reports[key_item][3]
+                    parse_data.extend(parse.generate_kraken2_report_csv(report_path, kraken_reports[key_item][4]))
+                    read_1 = kraken_reports[key_item][1]
+                    read_2 = kraken_reports[key_item][2]
+                    krakenfile_retrieve = kraken_reports[key_item][0]
+            for classification_item in parse_data:
+                if level in classification_item['Rank code']:
+                    if int(classification_item['Number of reads assigned directly']) > 0:
+                        if target_name in classification_item['Scientific name']:
+                            taxid_list.append(classification_item['NCBI Taxonomy ID'])
 
-        return read_merge_1, read_merge_2
+            for taxid in taxid_list:
+                logger.info(f'Extracting reads for: {taxid}')
+                extract_reads_command = extract.extract_reads_command(krakenfile_retrieve,
+                                                                      f'{target_name}_{taxid}',
+                                                                      taxid,
+                                                                      read_1,
+                                                                      read_2,
+                                                                      save_path)
+                retrieved_files_r1.append(extract_reads_command[1][0])
+                retrieved_files_r2.append(extract_reads_command[1][1])
+                try:
+                    subprocess.run(extract_reads_command[0], check=True)
+                    logger.info(f'Extracting {taxid} reads successful')
+                except subprocess.CalledProcessError as e:
+                    logger.error(f'Extracting {taxid} reads failed: {extract_reads_command}')
 
+            read_merge_1 = os.path.join(save_path, f'{target_name}_R1.fastq')
+            read_merge_2 = os.path.join(save_path, f'{target_name}_R2.fastq')
+
+            try:
+                with open(read_merge_1, 'w') as outfile:
+                    for fname in retrieved_files_r1:
+                        with open(fname) as infile:
+                            for line in infile:
+                                outfile.write(line)
+                with open(read_merge_2, 'w') as outfile:
+                    for fname in retrieved_files_r2:
+                        with open(fname) as infile:
+                            for line in infile:
+                                outfile.write(line)
+                logger.info(f'Merged extracted kraken2 mapped reads for {target_name}')
+                return read_merge_1, read_merge_2
+            except IOError:
+                logger.error(f'ERROR: Could not merge extracted reads for {target_name}')
+
+    else:
+        logger.error('ERROR: No metagenomics use case specified. Ensure a kraken2 database is specified within the '
+                     'reference_file when calling target_read_retrieval or a kraken2 database and diamond database is '
+                     'specified when calling uct_meta')
 
