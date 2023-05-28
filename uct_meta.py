@@ -1,8 +1,20 @@
+"""
+******************************************************************************************************************
+uct_meta.py
+This is the main script for the UCT_metagenomics pipeline.
+UCT_metagenomics pipeline
+Author: Gert Marais, University of Cape Town, 2023
+******************************************************************************************************************
+"""
+
 import argparse
 import logging
 import os
 import data_and_variables as _dv
 import meta_analysis as meta
+import parse_kraken2_report as parse
+from collections import defaultdict
+import zscore_analyse as zscore
 
 # The input file for the pipeline
 parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic data. Created by GJK Marais.')
@@ -43,6 +55,9 @@ parser.add_argument('--r1_id', '-f', default='R1_001.fastq.gz',
 parser.add_argument('--r2_id', '-r', default='R2_001.fastq.gz',
                     help='string used to identify read 2')
 
+# metadata file
+parser.add_argument('--metadata', '-a', required=True,
+                    help='metadata file')
 args = parser.parse_args()
 
 # Set variables from input
@@ -63,6 +78,7 @@ gen_id = args.gen_id
 r1_id = args.r1_id
 r2_id = args.r2_id
 file_length = args.filename_length
+metadata = args.metadata
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -86,17 +102,81 @@ if diamond_db_path is None:
 if kneaddata_db_path is None:
     kneaddata_db_path = _dv.kneaddata_db_path
 
-meta.meta_analysis(input_folder,
-                   id_length,
-                   output_folder,
-                   threads,
-                   trimmomatic_path,
-                   kneaddata_db_path,
-                   logger,
-                   gen_id,
-                   r1_id,
-                   r2_id,
-                   file_length,
-                   kraken2_db1_path,
-                   kraken2_db2_path,
-                   diamond_db_path)
+# Run the metagenomic analysis pipeline
+output_directories = meta.meta_analysis(input_folder,
+                                        id_length,
+                                        output_folder,
+                                        threads,
+                                        trimmomatic_path,
+                                        kneaddata_db_path,
+                                        logger,
+                                        gen_id,
+                                        r1_id,
+                                        r2_id,
+                                        file_length,
+                                        kraken2_db1_path,
+                                        kraken2_db2_path,
+                                        diamond_db_path)
+
+sample_dict = {}
+# Import metadata
+metadata_dict = zscore.importer(metadata)
+run_list = []
+for val in metadata:
+    run = val['Run']
+    if run not in run_list:
+        run_list.append(run)
+    sample = val['Sample']
+    sample_dict[sample] = {}
+    genus_dict = {}
+    species_dict = {}
+    result_dict = {}
+    sample_dict[sample]['metadata'] = val
+    sample_dict[sample]['genus_dict'] = genus_dict
+    sample_dict[sample]['species_dict'] = species_dict
+    sample_dict[sample]['results'] = result_dict
+
+# all species and genus
+species_dict = defaultdict(list)
+genus_dict = defaultdict(list)
+
+for output_directory in output_directories:
+    # Get the sample data from the kraken output directory
+    folders_kraken = os.listdir(output_directory)
+    directory_paths_kraken = [(os.path.join(output_directory, folder), folder)
+                              for folder in folders_kraken
+                              if os.path.isdir(os.path.join(output_directory, folder))]
+    for sample_directory in directory_paths_kraken:
+        kraken_report = os.path.join(sample_directory[0], f'{sample_directory[1]}.txt')
+        if os.path.isfile(kraken_report):
+            parsed_kraken_data = parse.generate_kraken2_report_csv(kraken_report, sample_directory[0], logger)
+            if parsed_kraken_data is not None:
+                if parsed_kraken_data:
+                    for data in parsed_kraken_data:
+                        if data['Number of reads covered'] > 0 and data['Rank code'] == _dv.species:
+                            species_dict[data['Scientific name']].append((sample_directory[1],
+                                                                          int(data['Number of reads covered'])))
+                        if data['Number of reads covered'] > 0 and data['Rank code'] == _dv.genus:
+                            genus_dict[data['Scientific name']].append((sample_directory[1],
+                                                                        int(data['Number of reads covered'])))
+                else:
+                    logger.warning(f'Kraken2 report empty {sample_directory[1]}')
+            else:
+                logger.warning(f'Kraken2 report parse failed for {sample_directory[1]}')
+        else:
+            logger.warning(f'No kraken2 report found for {sample_directory[1]}')
+
+# Organise species and genus data
+zscore.process_read_data(species_dict, sample_dict, logger)
+zscore.process_read_data(genus_dict, sample_dict, logger)
+
+# z-score analysis
+zscore_output = os.path.join(output_folder, 'zscore_results')
+if not os.path.isdir(zscore_output):
+    os.mkdir(zscore_output)
+zscore.z_score_analysis(sample_dict, run_list, zscore_output)
+
+
+
+
+

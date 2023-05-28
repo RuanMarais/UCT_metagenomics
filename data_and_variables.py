@@ -9,9 +9,16 @@ Author: Gert Marais, University of Cape Town, 2023
 # This file is used to store variable for the pipeline to streamline its use when running multiple
 # times with similar variables
 
+# z-score analysis variables
+z_score_threshold = 2
+minimum_reads = 2
+minimum_reads_genus = 2
+flag_species = ['Human immunodeficiency virus 1']
+flag_genus = ['Mycobacterium']
+exclude_species = ['Homo sapiens']
+exclude_genus = ['Homo']
 
 # Database locations
-
 kraken2_db1_path = None
 kraken2_db2_path = None
 kneaddata_db_path = None

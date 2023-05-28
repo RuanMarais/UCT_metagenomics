@@ -1,3 +1,13 @@
+"""
+******************************************************************************************************************
+target_read_retrieval.py
+This function retrieves and analyses reads for specific organisms from a kraken2 based metagenomic analysis.
+The details of the analysis is passed to the function in a csv file
+UCT_metagenomics pipeline
+Author: Gert Marais, University of Cape Town, 2023
+******************************************************************************************************************
+"""
+
 import argparse
 import logging
 import os
@@ -115,7 +125,8 @@ paired_sorted_dict = services.paired_read_list_generate(id_length,
                                                         '_kneaddata_paired_1.fastq',
                                                         '_kneaddata_paired_2.fastq',
                                                         file_names_all,
-                                                        input_folder_knead)
+                                                        input_folder_knead,
+                                                        logger)
 
 # Generate krakenfile dict for kraken2 database 1
 kraken2_krakenfiles_1 = {}

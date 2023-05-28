@@ -13,6 +13,7 @@ def diamond_build_db(db_fasta,
                      output_dir,
                      output_prefix):
     """
+    This function uses the DIAMOND 'makedb' command to create a DIAMOND database from a fasta file
 
     :param db_fasta: The fasta file that will be converted into the DIAMOND database
     :param output_dir: The directory filepath to save the created database
@@ -28,6 +29,7 @@ def diamond_classify(database,
                      output_dir,
                      output_prefix):
     """
+    This function uses the DIAMOND 'blastx' command to classify a query file using a DIAMOND database
 
     :param database: The DIAMOND database filepath
     :param query: The query filepath to be classified

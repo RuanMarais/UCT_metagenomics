@@ -13,13 +13,15 @@ This pipeline is run in a conda environment which can be created using the file 
 The uct_meta.py script is run using python. The script takes as input a directory with paired-end reads. With basic 
 usage as follows:
 
-```uct_meta.py -e <string_length_identifying_reads> -l <input_read_filename_length> -i <input_folder> -o <output_folder> -t <threads> -m <trimmomatic_path> -1 <path_to_kraken2_db1> -2 <path_to_kraken2_db2> -d <path_to_fasta_file_for_db_creation> -k <path_to_kneaddata_db> -g <string_present_in_all_unprocessed_reads> '-f' <string_present_in_all_forward_reads> '-r' <string_present_in_all_reverse_reads>```
+```uct_meta.py -e <string_length_identifying_reads> -l <input_read_filename_length> -i <input_folder> -o <output_folder> -t <threads> -m <trimmomatic_path> -1 <path_to_kraken2_db1> -2 <path_to_kraken2_db2> -d <path_to_fasta_file_for_db_creation> -k <path_to_kneaddata_db> -g <string_present_in_all_unprocessed_reads> '-f' <string_present_in_all_forward_reads> '-r' <string_present_in_all_reverse_reads> '-a' <metadata_file>```
 
 The script takes the following arguments:
 
 ```--identifier_length, -e``` - (Required) The string length of the input reads' filename that identifies the pair of reads as a unit. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier length would be 8.
 
 ```--filename_length, -l``` - (Required) The string length in the input reads' filename. This excludes file type. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier length would be 11.
+
+```--metadata, -a``` - (Required) The filepath to the metadata file.
 
 ```--input_folder, -i``` - (Default=CWD) The path to the folder containing the paired-end reads to be processed.
 
@@ -42,4 +44,6 @@ The script takes the following arguments:
 ```--r1_id, -f``` - (Default='R1_001.fastq.gz') A string identifying all forward reads.
 
 ```---r2_id, -r``` - (Default='R2_001.fastq.gz') A string identifying all reverse reads.
+
+
 
