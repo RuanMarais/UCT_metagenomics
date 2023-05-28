@@ -1,3 +1,13 @@
+"""
+******************************************************************************************************************
+meta_analysis.py
+This is the primary metagenomic analysis file that organises read data, runs the read primary processing
+for QC and performs read classification.
+UCT_metagenomics pipeline
+Author: Gert Marais, University of Cape Town, 2023
+******************************************************************************************************************
+"""
+
 import os
 import services
 import knead_data_run
@@ -11,7 +21,24 @@ import diamond_assign as diamond
 import parse_kraken2_report as parse
 
 
-def extract_reads(taxid, filename, krakenfiles, logger, extract_db_list=None, output=None):
+def extract_reads(taxid,
+                  filename,
+                  krakenfiles,
+                  logger,
+                  extract_db_list=None,
+                  output=None):
+    """
+
+    :param taxid: The NCBI Taxonomy ID to extract reads for
+    :param filename: The filename to use for extracted reads
+    :param krakenfiles: The dictionary of krakenfiles to extract reads from. The outer level has keys corresponding to
+    kraken2 databases. The inner level has keys corresponding to the sample ID.
+    :param logger: The logging object used to create the logfile
+    :param extract_db_list: The dictionary corresponding to the kraken2 databases used for extraction. The keys refer
+    to the kraken2 database and the item refers to the output folder for kraken2 results.
+    :param output: The output directory to write the extracted reads to. If None then the directory specified in the
+    extract_db_list dictionary is used.
+    """
     for db, krakenfiles_dict in krakenfiles.items():
         logger.info(f'Extracting {filename} reads for db{db}')
         for sample, krakenfile in krakenfiles_dict.items():
@@ -32,7 +59,7 @@ def extract_reads(taxid, filename, krakenfiles, logger, extract_db_list=None, ou
             try:
                 subprocess.run(extract_reads_command[0], check=True)
                 logger.info(f'Extracting {filename} reads successful')
-            except subprocess.CalledProcessError as e:
+            except subprocess.CalledProcessError:
                 logger.error(f'Extracting {filename} reads failed: {extract_reads_command}')
 
 
@@ -53,6 +80,27 @@ def meta_analysis(input_folder,
                   targeted=None,
                   target_name=None,
                   level=None):
+    """
+
+    :param input_folder:
+    :param id_length:
+    :param output_folder:
+    :param threads:
+    :param trimmomatic_path:
+    :param kneaddata_db_path:
+    :param logger:
+    :param general_filepath_id_string:
+    :param r1_file_id:
+    :param r2_file_id:
+    :param file_length:
+    :param kraken2_db1_path:
+    :param kraken2_db2_path:
+    :param diamond_db_path:
+    :param targeted:
+    :param target_name:
+    :param level:
+    :return:
+    """
     # Generate a list with all valid filenames
     file_names_all = services.filename_list_generate(general_filepath_id_string, input_folder)
 

@@ -10,7 +10,9 @@ import os
 import subprocess
 
 
-def index_reference(reference_path, reference_prefix, location):
+def index_reference(reference_path,
+                    reference_prefix,
+                    location):
     """
     This function indexes the reference genome using bowtie2-build
 
@@ -24,7 +26,12 @@ def index_reference(reference_path, reference_prefix, location):
     return ['bowtie2-build', ref_loc, ref_out]
 
 
-def generate_bowtie2_command(organism, reference, read_1, read_2, output_dir, threads):
+def generate_bowtie2_command(organism,
+                             reference,
+                             read_1,
+                             read_2,
+                             output_dir,
+                             threads):
     """
     This function generates the commands bowtie2 alignment. The commands are returned as a dictionary
 
@@ -57,7 +64,8 @@ def generate_bowtie2_command(organism, reference, read_1, read_2, output_dir, th
             'bamfile': bam_file}
 
 
-def run_alignment(command_dict, logger):
+def run_alignment(command_dict,
+                  logger):
     """
     This function runs the alignment commands sequentially using subprocess.
 
@@ -101,7 +109,8 @@ def run_alignment(command_dict, logger):
     return organism, sorted_bamfile
 
 
-def coverage_command(bamfile, output_file):
+def coverage_command(bamfile,
+                     output_file):
     """
     This function generates the BAM file evaluation command
 

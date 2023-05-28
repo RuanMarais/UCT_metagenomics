@@ -9,7 +9,9 @@ Author: Gert Marais, University of Cape Town, 2023
 import os
 
 
-def diamond_build_db(db_fasta, output_dir, output_prefix):
+def diamond_build_db(db_fasta,
+                     output_dir,
+                     output_prefix):
     """
 
     :param db_fasta: The fasta file that will be converted into the DIAMOND database
@@ -21,7 +23,10 @@ def diamond_build_db(db_fasta, output_dir, output_prefix):
     return ['diamond', 'makedb', '--in', db_fasta, '-d', db_path], db_path
 
 
-def diamond_classify(database, query, output_dir, output_prefix):
+def diamond_classify(database,
+                     query,
+                     output_dir,
+                     output_prefix):
     """
 
     :param database: The DIAMOND database filepath
