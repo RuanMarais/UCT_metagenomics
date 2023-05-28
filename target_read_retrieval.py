@@ -199,7 +199,8 @@ extract_kraken_reads_commands = extract_from_krakenfile.extract_targeted_reads(k
                                                                                data_dict_reference_file,
                                                                                paired_sorted_dict,
                                                                                output_folder,
-                                                                               references_directory)
+                                                                               references_directory,
+                                                                               logger)
 
 # Path dict for alignment
 alignment_dict = defaultdict(list)
@@ -349,9 +350,9 @@ for organism, reference_data in organism_reference_dict.items():
     command = bowtie2.index_reference(reference_data[0], reference_data[1], references_directory)
     try:
         subprocess.run(command, check=True)
-        logger.debug(f'Indexing command: {command}')
+        logger.info(f'Indexing command: {organism}')
     except subprocess.CalledProcessError:
-        logger.debug(f'Indexing command failed: {command}')
+        logger.error(f'Indexing command failed: {command}')
 
 # Generate alignment commands dictionary for reference synthetic read alignment
 command_dict_defaultdict_ref = defaultdict(list)
@@ -368,10 +369,14 @@ for ref_name, alignment_data_items in alignment_dict_pirs.items():
                                                               threads)
         command_dict_defaultdict_ref[ref_name].append(alignment_commands)
 
-
-
-
-
+# Run alignment
+reference_folder_output = os.path.join(output_folder, 'reference_evaluation')
+if not os.path.exists(reference_folder_output):
+    os.makedirs(reference_folder_output)
+for ref_name, command_dict in command_dict_defaultdict_ref.items():
+    align_output = bowtie2.run_alignment(command_dict, logger)
+    output_file = os.path.join(reference_folder_output, f'{ref_name}')
+    bowtie2.coverage_command(align_output[1], output_file)
 
 # Generate alignment commands dictionary for targeted retrieval
 command_dict_defaultdict = defaultdict(list)

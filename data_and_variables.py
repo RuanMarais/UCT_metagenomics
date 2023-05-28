@@ -1,3 +1,15 @@
+"""
+******************************************************************************************************************
+data_and_variable.py
+Data and variables for the UCT_metagenomics pipeline
+UCT_metagenomics pipeline
+Author: Gert Marais, University of Cape Town, 2023
+******************************************************************************************************************
+"""
+# This file is used to store variable for the pipeline to streamline its use when running multiple
+# times with similar variables
+
+
 # Database locations
 
 kraken2_db1_path = None
