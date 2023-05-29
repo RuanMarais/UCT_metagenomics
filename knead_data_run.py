@@ -27,11 +27,20 @@ def kneaddata_command_generate(input_read_1,
     :return: The kneaddata command to run using subprocess
     """
     if trimmomatic_path is None:
-        return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
-                '--output', output_directory, '--threads', str(threads)]
+        if 'NC' in input_read_1:
+            return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
+                    '--output', output_directory, '--threads', str(threads), '--bypass-trf']
+        else:
+            return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
+                    '--output', output_directory, '--threads', str(threads)]
     else:
-        return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
-                '--output', output_directory, '--threads', str(threads), '--trimmomatic', trimmomatic_path]
+        if 'NC' in input_read_1:
+            return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
+                    '--output', output_directory, '--threads', str(threads), '--trimmomatic', trimmomatic_path,
+                    '--bypass-trf']
+        else:
+            return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
+                    '--output', output_directory, '--threads', str(threads), '--trimmomatic', trimmomatic_path]
 
 
 def generate_kneaddata_commands(raw_reads_dict,

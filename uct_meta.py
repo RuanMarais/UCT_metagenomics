@@ -50,9 +50,9 @@ parser.add_argument('--kneaddata_db', '-k', default=None,
 # Input filetype data
 parser.add_argument('--gen_id', '-g', default='fastq.gz',
                     help='string used to identify all raw sequencing reads')
-parser.add_argument('--r1_id', '-f', default='R1_001.fastq.gz',
+parser.add_argument('--r1_id', '-f', default='_R1.fastq.gz',
                     help='string used to identify read 1')
-parser.add_argument('--r2_id', '-r', default='R2_001.fastq.gz',
+parser.add_argument('--r2_id', '-r', default='_R2.fastq.gz',
                     help='string used to identify read 2')
 
 # metadata file
@@ -103,35 +103,40 @@ if kneaddata_db_path is None:
     kneaddata_db_path = _dv.kneaddata_db_path
 
 # Run the metagenomic analysis pipeline
-output_directories = meta.meta_analysis(input_folder,
-                                        id_length,
-                                        output_folder,
-                                        threads,
-                                        trimmomatic_path,
-                                        kneaddata_db_path,
-                                        logger,
-                                        gen_id,
-                                        r1_id,
-                                        r2_id,
-                                        file_length,
-                                        kraken2_db1_path,
-                                        kraken2_db2_path,
-                                        diamond_db_path)
+meta_output = meta.meta_analysis(input_folder,
+                                 id_length,
+                                 output_folder,
+                                 threads,
+                                 trimmomatic_path,
+                                 kneaddata_db_path,
+                                 logger,
+                                 gen_id,
+                                 r1_id,
+                                 r2_id,
+                                 file_length,
+                                 kraken2_db1_path,
+                                 kraken2_db2_path,
+                                 diamond_db_path)
 
 sample_dict = {}
 # Import metadata
 metadata_dict = zscore.importer(metadata)
 run_list = []
-for val in metadata:
-    run = val['Run']
+for val in metadata_dict:
+    run = val['run']
     if run not in run_list:
         run_list.append(run)
-    sample = val['Sample']
+    sample = val['sample']
     sample_dict[sample] = {}
     genus_dict = {}
     species_dict = {}
     result_dict = {}
     sample_dict[sample]['metadata'] = val
+    try:
+        sample_dict[sample]['metadata']['nonhuman_reads'] = meta_output[1][sample][1]
+        sample_dict[sample]['metadata']['total_reads'] = meta_output[1][sample][0]
+    except KeyError:
+        logger.info(f'No nonhuman reads data for {sample}')
     sample_dict[sample]['genus_dict'] = genus_dict
     sample_dict[sample]['species_dict'] = species_dict
     sample_dict[sample]['results'] = result_dict
@@ -140,7 +145,7 @@ for val in metadata:
 species_dict = defaultdict(list)
 genus_dict = defaultdict(list)
 
-for output_directory in output_directories:
+for output_directory in meta_output[0]:
     # Get the sample data from the kraken output directory
     folders_kraken = os.listdir(output_directory)
     directory_paths_kraken = [(os.path.join(output_directory, folder), folder)
@@ -153,10 +158,10 @@ for output_directory in output_directories:
             if parsed_kraken_data is not None:
                 if parsed_kraken_data:
                     for data in parsed_kraken_data:
-                        if data['Number of reads covered'] > 0 and data['Rank code'] == _dv.species:
+                        if int(data['Number of reads covered']) > 0 and data['Rank code'] == _dv.species:
                             species_dict[data['Scientific name']].append((sample_directory[1],
                                                                           int(data['Number of reads covered'])))
-                        if data['Number of reads covered'] > 0 and data['Rank code'] == _dv.genus:
+                        if int(data['Number of reads covered']) > 0 and data['Rank code'] == _dv.genus:
                             genus_dict[data['Scientific name']].append((sample_directory[1],
                                                                         int(data['Number of reads covered'])))
                 else:
@@ -175,8 +180,3 @@ zscore_output = os.path.join(output_folder, 'zscore_results')
 if not os.path.isdir(zscore_output):
     os.mkdir(zscore_output)
 zscore.z_score_analysis(sample_dict, run_list, zscore_output)
-
-
-
-
-

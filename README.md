@@ -17,33 +17,39 @@ usage as follows:
 
 The script takes the following arguments:
 
-```--identifier_length, -e``` - (Required) The string length of the input reads' filename that identifies the pair of reads as a unit. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier length would be 8.
+- ```--identifier_length, -e``` - (Required) The string length of the input reads' filename that identifies the pair of reads as a unit. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier length would be 8.
 
-```--filename_length, -l``` - (Required) The string length in the input reads' filename. This excludes file type. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier length would be 11.
+- ```--filename_length, -l``` - (Required) The string length in the input reads' filename. This excludes file type. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier length would be 11.
 
-```--metadata, -a``` - (Required) The filepath to the metadata file.
+- ```--metadata, -a``` - (Required) The filepath to the metadata file.
 
-```--input_folder, -i``` - (Default=CWD) The path to the folder containing the paired-end reads to be processed.
+- ```--input_folder, -i``` - (Default=CWD) The path to the folder containing the paired-end reads to be processed.
 
-```--output_folder, -o``` - (Default=CWD) The path to the folder where the output files will be written.
+- ```--output_folder, -o``` - (Default=CWD) The path to the folder where the output files will be written.
 
-```--threads, -t``` - (Default=1) The number of threads to be used for the analysis.
+- ```--threads, -t``` - (Default=1) The number of threads to be used for the analysis.
 
-```--trimmomatic, -m``` - (Default=bin) The path to the trimmomatic jar file.
+- ```--trimmomatic, -m``` - (Default=bin) The path to the trimmomatic jar file.
 
-```--kraken2_db1, -1``` - (Default=Path specified in data_and_variable.py file) The path to the first kraken2 database to use for the analysis. The analysis allows for usage of up to 2 databases.
+- ```--kraken2_db1, -1``` - (Default=Path specified in data_and_variable.py file) The path to the first kraken2 database to use for the analysis. The analysis allows for usage of up to 2 databases.
 
-```--kraken2_db2, -2``` - (Default=Path specified in data_and_variable.py file) The path to the second kraken2 database to use for the analysis.
+- ```--kraken2_db2, -2``` - (Default=Path specified in data_and_variable.py file) The path to the second kraken2 database to use for the analysis.
 
-```--diamond_db, -d``` - (Default=Path specified in data_and_variable.py file) The path to the fasta file to use to construct a DIAMOND database.
+- ```--diamond_db, -d``` - (Default=Path specified in data_and_variable.py file) The path to the fasta file to use to construct a DIAMOND database.
 
-```--kneaddata_db, -k``` - (Default=Path specified in data_and_variable.py file) The path to the kneaddata database to use for human read subtraction and contaminant removal.
+- ```--kneaddata_db, -k``` - (Default=Path specified in data_and_variable.py file) The path to the kneaddata database to use for human read subtraction and contaminant removal.
 
-```--gen_id', '-g``` - (Default='fastq.gz') A string identifying all unprocessed reads.
+- ```--gen_id', '-g``` - (Default='fastq.gz') A string identifying all unprocessed reads.
 
-```--r1_id, -f``` - (Default='R1_001.fastq.gz') A string identifying all forward reads.
+- ```--r1_id, -f``` - (Default='R1_001.fastq.gz') A string identifying all forward reads.
 
-```---r2_id, -r``` - (Default='R2_001.fastq.gz') A string identifying all reverse reads.
+- ```---r2_id, -r``` - (Default='R2_001.fastq.gz') A string identifying all reverse reads.
+
+The metadata file (-a) is csv with the headers:
+
+`sample,run`
+
+The sample name should correspond to the substring generated when the read filenames are split by the identifier length (-e). Run is an integer. 
 
 
 

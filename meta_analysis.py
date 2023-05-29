@@ -19,6 +19,49 @@ import generate_meta_contigs_spades as spades
 import interleave_paired_reads as interleave
 import diamond_assign as diamond
 import parse_kraken2_report as parse
+import re
+import data_and_variables as _dv
+
+
+def find_read_count_in_file(file_path,
+                            logger):
+    """
+    This function retrieves the read counts from the kneaddata log file
+
+    :param file_path: The kneaddata log file path
+    :param logger: A logging object to create logfile
+    :return: The total and final read count from the kneaddata log file
+    """
+    total_read_count = None
+    final_read_count = None
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                if _dv.total_reads in line:
+                    # Use regular expression to find the numeric value
+                    count = re.findall(r'\d+\.\d+', line)
+                    # If a numeric value is found
+                    if count and len(count) == 1:
+                        # Convert the string to float
+                        total_read_count = float(count[0])
+                    else:
+                        logger.error(f'Kneaddata log file format unexpected {file_path}')
+                elif _dv.final_reads in line:
+                    # Use regular expression to find the numeric value
+                    count = re.findall(r'\d+\.\d+', line)
+                    # If a numeric value is found
+                    if count and len(count) == 1:
+                        # Convert the string to float
+                        final_read_count = float(count[0])
+                    else:
+                        logger.error(f'Kneaddata log file format unexpected {file_path}')
+    except FileNotFoundError:
+        logger.error(f'Could not find kneaddata log file at {file_path}')
+
+    if total_read_count and final_read_count:
+        return total_read_count, final_read_count
+    else:
+        return None
 
 
 def extract_reads(taxid,
@@ -163,14 +206,27 @@ def meta_analysis(input_folder,
         except subprocess.CalledProcessError as e:
             logger.error(f'Kneaddata command failed: {knead_command}')
 
-    # Generate kraken2 source directory
+    # Generate kraken2 source directory and read count dictionary
     kraken2_source_files = {}
+    read_count_dict = {}
     folders_knead = os.listdir(knead_directory)
     directory_paths_knead = [(os.path.join(knead_directory, folder), folder)
                              for folder in folders_knead
                              if os.path.isdir(os.path.join(knead_directory, folder))]
     for directory in directory_paths_knead:
         logger.info(f'Kneaddata read output retrieval: {directory}')
+        # Get logfile to generate read count
+        logfile = os.path.join(directory[0], f'{directory[1]}_kneaddata.log')
+        if os.path.isfile(logfile):
+            read_count_data = find_read_count_in_file(logfile, logger)
+            if read_count_data is not None:
+                read_count_dict[directory[1]] = read_count_data
+            else:
+                logger.error(f'Read count not found in logfile: {logfile}')
+        else:
+            logger.error(f'Logfile not found: {logfile}')
+
+        # Get output files for kraken2
         filename_1 = f'{directory[1]}_kneaddata_paired_1.fastq'
         filename_2 = f'{directory[1]}_kneaddata_paired_2.fastq'
         file_1 = os.path.join(directory[0], filename_1)
@@ -181,6 +237,8 @@ def meta_analysis(input_folder,
             logger.info(f'Kraken2 source files retrieved from: {directory}')
             shutil.copy(file_1, kraken_source_directory)
             shutil.copy(file_2, kraken_source_directory)
+        else:
+            logger.error(f'Kneaddata output files not found: {directory}')
         kraken2_source_files[directory[1]] = (copy_path_1, copy_path_2)
 
     kraken_commands_list = []
@@ -293,9 +351,10 @@ def meta_analysis(input_folder,
                                 logger.error(f'Generating contigs failed: {contigs_command}')
 
                             # create interleaved files
-                            interleave_command = interleave.interleave_paired_reads(unassigned_read_1, unassigned_read_2,
+                            interleave_command = interleave.interleave_paired_reads(unassigned_read_1,
+                                                                                    unassigned_read_2,
                                                                                     os.path.join(output_directory,
-                                                                                                 'interleaved.fasta.assembled.fastq'))
+                                                                                                 'interleaved'))
 
                             try:
                                 subprocess.run(interleave_command, check=True)
@@ -304,13 +363,16 @@ def meta_analysis(input_folder,
                                 logger.error(f'Interleaving reads failed: {interleave_command}')
 
                             contigs_file = os.path.join(contigs_folder, 'contigs.fasta')
-                            interleaved_file = os.path.join(output_directory, 'interleaved.fasta.assembled.fastq')
-                            if os.path.isfile(contigs_file) and os.path.isfile(interleaved_file):
+                            interleaved_file = os.path.join(output_directory, 'interleaved.assembled.fastq')
+                            if os.path.isfile(contigs_file) and os.path.isfile(interleaved_file) and \
+                                    os.path.getsize(contigs_file) > 0 and os.path.getsize(interleaved_file) > 0:
                                 unassigned_local[directory[1]] = (contigs_file, interleaved_file)
-                            elif os.path.isfile(interleaved_file):
+                            elif os.path.isfile(interleaved_file) and os.path.getsize(interleaved_file) > 0:
                                 unassigned_local[directory[1]] = (None, interleaved_file)
                             else:
                                 unassigned_local[directory[1]] = (None, None)
+                                logger.error(f'Contigs or interleaved file not found: {directory[1]} '
+                                             f'for DIAMOND analysis')
                             unassigned_dict[db] = unassigned_local
                         else:
                             logger.error(f'Unassigned reads not found: {directory[1]}')
@@ -357,7 +419,7 @@ def meta_analysis(input_folder,
                             logger.info(f'Diamond command successful')
                         except subprocess.CalledProcessError:
                             logger.error(f'Diamond command failed: {diamond_command_interleaved}')
-            return output_directories
+            return output_directories, read_count_dict
         elif diamond_db_path is None and targeted is not None:
             retrieved_files_r1 = []
             retrieved_files_r2 = []

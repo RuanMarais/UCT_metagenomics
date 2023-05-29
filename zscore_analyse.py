@@ -20,33 +20,35 @@ def process_read_data(tax_dict,
                       sample_dict,
                       logger):
     """
+    This function processes the read data from the kraken2 report and adds it to the sample dictionary
 
-    :param tax_dict:
-    :param sample_dict:
-    :param logger:
+    :param tax_dict: The dictionary of species or genus data derived from a kraken2 report
+    :param sample_dict: The sample data dictionary initialised from the metadata file
+    :param logger: The logging object to generate the logfile
     """
     for tax, sample_data in tax_dict.items():
         for sample, sample_info in sample_dict.items():
             try:
-                nonhuman_reads = float(sample_dict[sample]['metadata']['nonhuman reads'])
+                nonhuman_reads = float(sample_dict[sample]['metadata']['nonhuman_reads'])
+                located = False
+                for data_item in sample_data:
+                    if data_item[0] == f'{sample}_R1':
+                        read_data = float(data_item[1])
+                        located = True
+                if located:
+                    ratio = read_data / nonhuman_reads
+                    sample_dict[sample]['species_dict'][tax] = [read_data, ratio]
+                else:
+                    sample_dict[sample]['species_dict'][tax] = [0, 0]
             except KeyError:
                 logger.error(f'Error accessing metadata for {sample}')
-            located = False
-            for data_item in sample_data:
-                if data_item[0] == sample:
-                    read_data = float(data_item[1])
-                    located = True
-            if located:
-                ratio = read_data / nonhuman_reads
-                sample_dict[sample]['species_dict'][tax] = [read_data, ratio]
-            else:
-                sample_dict[sample]['species_dict'][tax] = [0, 0]
 
 
 def importer(file):
     """
+    Helper function to import a csv file as a list of dictionaries
 
-    :param file:
+    :param file: csv file to be imported
     :return: list of dictionaries
     """
     output = []
@@ -113,7 +115,16 @@ def write_to_excel(nested_dict,
     workbook.close()
 
 
-def z_score_analysis(sample_dict, run_list, output_folder):
+def z_score_analysis(sample_dict,
+                     run_list,
+                     output_folder):
+    """
+
+    :param sample_dict:
+    :param run_list:
+    :param output_folder:
+    """
+    # Data containers for the z-score analysis
     all_dict_species = defaultdict(list)
     all_dict_genus = defaultdict(list)
     run_dict_genus = {}
@@ -128,7 +139,7 @@ def z_score_analysis(sample_dict, run_list, output_folder):
         run_dict_genus[val] = vals_add_genus
 
     for key in sample_dict.keys():
-        run = sample_dict[key]['metadata']['Run']
+        run = sample_dict[key]['metadata']['run']
 
         for genus_item_key in sample_dict[key]['genus_dict'].keys():
             read_corrected = sample_dict[key]['genus_dict'][genus_item_key][1]
@@ -164,9 +175,9 @@ def z_score_analysis(sample_dict, run_list, output_folder):
             z_score_dict_species[key][species] = gen_dict
 
     for key in sample_dict.keys():
-        run = sample_dict[key]['metadata']['Run']
+        run = sample_dict[key]['metadata']['run']
         for genus, vals in sample_dict[key]['genus_dict'].items():
-            neg_val = sample_dict['NC_r' + run]['genus_dict'][genus][1]
+            neg_val = sample_dict['NCrun' + run]['genus_dict'][genus][1]
             mean_all = z_score_dict_genus['all'][genus]['mean']
             std_all = z_score_dict_genus['all'][genus]['std']
             mean_run = z_score_dict_genus[run][genus]['mean']
@@ -181,11 +192,10 @@ def z_score_analysis(sample_dict, run_list, output_folder):
                 z_score_higher_than_nc_for_run = z_score_run > z_score_neg
             else:
                 z_score_run = None
-                z_score_neg = None
                 z_score_higher_than_nc_for_run = None
             sample_dict[key]['genus_dict'][genus].extend([z_score_all, z_score_run, z_score_higher_than_nc_for_run])
         for species, vals in sample_dict[key]['species_dict'].items():
-            neg_val = sample_dict['NC_r' + run]['species_dict'][species][1]
+            neg_val = sample_dict['NCrun' + run]['species_dict'][species][1]
             mean_all = z_score_dict_species['all'][species]['mean']
             std_all = z_score_dict_species['all'][species]['std']
             mean_run = z_score_dict_species[run][species]['mean']
@@ -200,7 +210,6 @@ def z_score_analysis(sample_dict, run_list, output_folder):
                 z_score_higher_than_nc_for_run = z_score_run > z_score_neg
             else:
                 z_score_run = None
-                z_score_neg = None
                 z_score_higher_than_nc_for_run = None
             sample_dict[key]['species_dict'][species].extend([z_score_all, z_score_run, z_score_higher_than_nc_for_run])
 
@@ -246,9 +255,32 @@ def z_score_analysis(sample_dict, run_list, output_folder):
     column_headings = ['Species or Genus', 'Reads', 'Reads per nonhuman read', 'z score all runs', 'z score within run',
                        'z score greater than negative control z score']
 
+    # Generate excel files for each sample with the pathogen z-score data
     for participant in sample_dict.keys():
         write_to_excel(sample_dict[participant]['results'],
-                       participant + '.xlsx',
+                       f'{participant}.xlsx',
                        keys_print,
                        column_headings,
                        output_folder)
+
+    # Generate a general excel file with the read counts for each sample
+    gen_data_output = []
+    general_results_output = os.path.join(output_folder, 'general_results.xlsx')
+    column_headers_general = ['Sample', 'Total reads', 'Non-human reads']
+    gen_data_output.append(column_headers_general)
+    workbook = xlsxwriter.Workbook(general_results_output)
+    worksheet = workbook.add_worksheet()
+
+    for sample, data in sample_dict.items():
+        total_reads = data['metadata']['total_reads']
+        nonhuman_reads = data['metadata']['nonhuman_reads']
+        output_item = [sample, total_reads, nonhuman_reads]
+        gen_data_output.append(output_item)
+
+    for i, row_data in enumerate(gen_data_output):
+        for j, cell_data in enumerate(row_data):
+            worksheet.write(i, j, cell_data)
+
+    workbook.close()
+
+
