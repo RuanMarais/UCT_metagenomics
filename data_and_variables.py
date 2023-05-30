@@ -8,6 +8,9 @@ Author: Gert Marais, University of Cape Town, 2023
 """
 # This file is used to store variable for the pipeline to streamline its use when running multiple
 # times with similar variables
+import os
+
+wrkdir = os.getcwd()
 
 # z-score analysis variables
 z_score_threshold = 2
@@ -38,9 +41,9 @@ read_length = 100
 fragment_length = 180
 
 # target_read_retrieval variables
-input_folder_kraken2_1 = 'kraken2_db1_results'
-input_folder_kraken2_2 = 'kraken2_db2_results'
-knead_data_path = 'kraken2_source_files'
+input_folder_kraken2_1 = os.path.join(wrkdir, 'kraken2_db1_results')
+input_folder_kraken2_2 = os.path.join(wrkdir, 'kraken2_db2_results')
+knead_data_path = os.path.join(wrkdir, 'kraken2_source_files')
 
 # kneaddata read count retrieval strings
 total_reads = 'READ COUNT: raw pair1 : Initial number of reads'

@@ -30,8 +30,6 @@ parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic
 # Required arguments
 parser.add_argument('--identifier_length', '-e', type=int, required=True,
                     help='The string length that identifies the sequencing read')
-parser.add_argument('--filename_length', '-l', type=int, required=True,
-                    help='The string length that identifies the sequencing read. Up to the filetype suffix')
 parser.add_argument('--reference_file', '-r', required=True,
                     help='The csv file that refers to the taxid and reference to use for each sample')
 parser.add_argument('--references_directory', '-d', required=True,
@@ -66,11 +64,13 @@ args = parser.parse_args()
 
 # Set variables from input
 id_length = args.identifier_length
-file_length = args.filename_length
+file_length = id_length + 3
 reference_file = args.reference_file
 references_directory = args.references_directory
 threads = args.threads
 main_output = args.output_folder
+if main_output is None:
+    main_output = os.getcwd()
 
 output_folder = os.path.join(main_output, 'targeted_reads_retrieval')
 if not os.path.exists(output_folder):

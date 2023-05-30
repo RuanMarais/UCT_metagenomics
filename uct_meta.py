@@ -24,7 +24,7 @@ parser.add_argument('--identifier_length', '-e', type=int, required=True,
                     help='The string length that identifies the sequencing read. Unique to each pair of reads')
 
 # Input/output
-parser.add_argument('--input_folder', '-i', default=None,
+parser.add_argument('--input_folder', '-i', required=True,
                     help='The file path that contains Illumina paired-end reads')
 parser.add_argument('--output_folder', '-o', default=None,
                     help='Result folders will be output to this folder')
@@ -60,8 +60,6 @@ args = parser.parse_args()
 
 # Set variables from input
 input_folder = args.input_folder
-if input_folder is None:
-    input_folder = os.getcwd()
 output_folder = args.output_folder
 if output_folder is None:
     output_folder = os.getcwd()

@@ -52,7 +52,7 @@ def extract_targeted_reads(krakenfile_dict_1,
     krakenfile filepaths. This is for krakenfiles generated with kraken2 database 1.
     :param krakenfile_dict_2: The dictionary with keys corresponding to the key in the target_dict referring to
     krakenfile filepaths. This is for krakenfiles generated with kraken2 database 2.
-    :param target_dict:
+    :param target_dict: Dictionary generated from the input target_reads_retrieval reference_file
     :param raw_reads_dict: The dictionary with keys corresponding to the key in the target_dict referring to
     the raw reads that were used for kraken2 classification. Reads are saved as a tuple (read_1 path, read_2 path)
     :param output_dir: The output directory filepath for the reads to be extracted to
