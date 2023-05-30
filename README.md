@@ -17,7 +17,7 @@ The filename convention is as follows:
 
 The number of chars in the sample name should be consistent (including negative control)
 
-Basic usage is as follows:
+Basic usage:
 
 `uct_meta.py -e <string_length_identifying_reads> -i <input_folder> -o <output_folder> -t <threads> -m <trimmomatic_path> -1 <path_to_kraken2_db1> -2 <path_to_kraken2_db2> -d <path_to_fasta_file_for_db_creation> -k <path_to_kneaddata_db> -g <string_present_in_all_unprocessed_reads> '-f' <string_present_in_all_forward_reads> '-r' <string_present_in_all_reverse_reads> '-a' <metadata_file>`
 
@@ -80,7 +80,7 @@ database that was used to detect the targeted pathogen (either 1 or 2).
 - Reference genomes for the targets for further evaluation should be retrieved and placed in a folder which is passed 
 to the script and specified in the reference csv specified above.
 
-Basic usage is as follows:
+Basic usage:
 
 `target_read_retrieval.py -e <string_length_identifying_reads> -r <reference_file> -d <reference_genome_directory_filepath> -k <input_folder_kneaddata_generated_reads> -1 <input_folder_kraken_generated_results_db1> -2 <input_folder_kraken_generated_results_db2> -t <threads> -p <conda_environment_name_with_pIRS> -m <trimmomatic_path> -i <kraken2_database_1_path> -I <kraken2_database_2_path> -K <kneaddata_database_path> -o <output_folder>` 
 
@@ -88,18 +88,30 @@ The script uses the following arguments:
 
 - `--identifier_length, -e` - (Required) The string length of the input reads' filename that identifies the pair of 
 reads. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier length would be 8.
+
 - `--reference_file, -r` - (Required) The filepath to the reference csv file.
+
 - `--references_directory, -d` - (Required) The filepath to the directory containing the reference genomes.
+
 - `--input_folder_knead, -k` - (Default=Assumes CWD is the output directory of the uct_meta.py script) The path to the 
 folder containing the KneadData generated reads.
+
 - `--input_folder_kraken2_1, -1` - (Default=Assumes CWD is the output directory of the uct_meta.py script) The path to 
 the folder containing the Kraken 2 generated results for database 1.
+
 - `--input_folder_kraken2_2, -2` - (Default=Assumes CWD is the output directory of the uct_meta.py script) The path to 
 the folder containing the kraken generated results for database 2.
+
 - `--threads, -t` - (Default=1) The number of threads to be used for the analysis.
+
 - `--pirs_env, -p` - (Default=Assumes pIRS is installed in current conda env) The name of the conda environment with pIRS installed.
+
 - `--trimmomatic, -m` - (Default=bin) The path to the trimmomatic jar file.
+
 - `--kraken2_db1, -i` - (Default=Path specified in data_and_variable.py file) The path to the first kraken2 database to use for the analysis. The analysis allows for usage of up to 2 databases.
+
 - `--kraken2_db2, -I` - (Default=Path specified in data_and_variable.py file) The path to the second kraken2 database to use for the analysis.
+
 - `--kneaddata_db, -K` - (Default=Path specified in data_and_variable.py file) The path to the kneaddata database to use for human read subtraction and contaminant removal.
+
 - `--output_folder, -o` - (Default=CWD) The path to the folder where the output files will be written.
