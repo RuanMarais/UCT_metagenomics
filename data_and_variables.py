@@ -45,3 +45,4 @@ knead_data_path = None
 # kneaddata read count retrieval strings
 total_reads = 'READ COUNT: raw pair1 : Initial number of reads'
 final_reads = 'READ COUNT: final pair1 : Total reads after merging results from multiple databases'
+kneaddata_filesize_trf_threshold_mb = 20

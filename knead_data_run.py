@@ -6,7 +6,20 @@ UCT_metagenomics pipeline
 Author: Gert Marais, University of Cape Town, 2023
 ******************************************************************************************************************
 """
+from data_and_variables import kneaddata_filesize_trf_threshold_mb
 import os
+
+
+def get_file_size_mb(file_path):
+    """
+    This function returns the size of a file in megabytes
+
+    :param file_path: Path to the file to evaluate
+    :return: file size in megabytes
+    """
+    size_in_bytes = os.path.getsize(file_path)
+    size_in_megabytes = size_in_bytes / (1024 * 1024)
+    return size_in_megabytes
 
 
 def kneaddata_command_generate(input_read_1,
@@ -27,14 +40,14 @@ def kneaddata_command_generate(input_read_1,
     :return: The kneaddata command to run using subprocess
     """
     if trimmomatic_path is None:
-        if 'NC' in input_read_1:
+        if get_file_size_mb(input_read_1) < kneaddata_filesize_trf_threshold_mb:
             return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
                     '--output', output_directory, '--threads', str(threads), '--bypass-trf']
         else:
             return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
                     '--output', output_directory, '--threads', str(threads)]
     else:
-        if 'NC' in input_read_1:
+        if get_file_size_mb(input_read_1) < kneaddata_filesize_trf_threshold_mb:
             return ['kneaddata', '--input', input_read_1, '--input', input_read_2, '--reference-db', reference_db,
                     '--output', output_directory, '--threads', str(threads), '--trimmomatic', trimmomatic_path,
                     '--bypass-trf']

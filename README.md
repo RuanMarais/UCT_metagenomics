@@ -41,9 +41,9 @@ The script takes the following arguments:
 
 - ```--gen_id', '-g``` - (Default='fastq.gz') A string identifying all unprocessed reads.
 
-- ```--r1_id, -f``` - (Default='R1_001.fastq.gz') A string identifying all forward reads.
+- ```--r1_id, -f``` - (Default='_R1.fastq.gz') A string identifying all forward reads.
 
-- ```---r2_id, -r``` - (Default='R2_001.fastq.gz') A string identifying all reverse reads.
+- ```---r2_id, -r``` - (Default='_R2.fastq.gz') A string identifying all reverse reads.
 
 The metadata file (-a) is csv with the headers:
 
