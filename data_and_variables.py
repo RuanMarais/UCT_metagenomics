@@ -38,9 +38,9 @@ read_length = 100
 fragment_length = 180
 
 # target_read_retrieval variables
-input_folder_kraken2_1 = None
-input_folder_kraken2_2 = None
-knead_data_path = None
+input_folder_kraken2_1 = 'kraken2_db1_results'
+input_folder_kraken2_2 = 'kraken2_db2_results'
+knead_data_path = 'kraken2_source_files'
 
 # kneaddata read count retrieval strings
 total_reads = 'READ COUNT: raw pair1 : Initial number of reads'

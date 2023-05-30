@@ -28,39 +28,39 @@ import data_and_variables as _dv
 parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic data. Created by GJK Marais.')
 
 # Required arguments
-parser.add_argument('--identifier_length', type=int, required=True,
+parser.add_argument('--identifier_length', '-e', type=int, required=True,
                     help='The string length that identifies the sequencing read')
-parser.add_argument('--filename_length', type=int, required=True,
+parser.add_argument('--filename_length', '-l', type=int, required=True,
                     help='The string length that identifies the sequencing read. Up to the filetype suffix')
-parser.add_argument('--reference_file', required=True,
-                    help='The csv file that refers to the taxid and reference to use for each identifier')
-parser.add_argument('--references_directory', required=True,
+parser.add_argument('--reference_file', '-r', required=True,
+                    help='The csv file that refers to the taxid and reference to use for each sample')
+parser.add_argument('--references_directory', '-d', required=True,
                     help='Directory for ncbi references')
 
 # Input/Output folders
-parser.add_argument('--input_folder_knead', default=None,
+parser.add_argument('--input_folder_knead', '-k', default=None,
                     help='The file path that contains the kneaddata paired output files used for kraken analysis')
-parser.add_argument('--output_folder', default=None,
+parser.add_argument('--output_folder', '-o', default=None,
                     help='Result folders will be output to this folder')
-parser.add_argument('--input_folder_kraken2_1', default=None,
+parser.add_argument('--input_folder_kraken2_1', '-1', default=None,
                     help='Result folder for kraken2 results from database 1')
-parser.add_argument('--input_folder_kraken2_2', default=None,
+parser.add_argument('--input_folder_kraken2_2', '-2', default=None,
                     help='Result folder for kraken2 results from database 2')
 
 # System parameters
-parser.add_argument('--threads', type=int, default=1,
+parser.add_argument('--threads', '-t', type=int, default=1,
                     help='Number of threads to use for bowtie2 alignment')
-parser.add_argument('--pirs_env', default=None,
+parser.add_argument('--pirs_env', '-p', default=None,
                     help='conda environment for pirs')
-parser.add_argument('--trimmomatic', default=None,
+parser.add_argument('--trimmomatic', '-m', default=None,
                     help='trimmomatic path')
 
 # Database paths
-parser.add_argument('--kraken2_db1', default=None,
+parser.add_argument('--kraken2_db1', '-i', default=None,
                     help='kraken2 db1 path')
-parser.add_argument('--kraken2_db2', default=None,
+parser.add_argument('--kraken2_db2', '-I', default=None,
                     help='kraken2 db2 path')
-parser.add_argument('--kneaddata_db', default=None,
+parser.add_argument('--kneaddata_db', '-K', default=None,
                     help='knead_data path')
 args = parser.parse_args()
 
@@ -171,7 +171,7 @@ with open(reference_file, mode='r', encoding='utf-8-sig') as csvfile:
         for row in csv_reader:
             # Get the values for 'identifier', 'taxid', 'reference', 'reference_prefix' and 'kraken_database'
             # for each row. This matches the reference_file passed to the function.
-            identifier = row['identifier']
+            identifier = f"{row['sample']}_R1"
             organism = row['organism']
             taxid = row['taxid']
             reference = row['reference']

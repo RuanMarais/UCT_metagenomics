@@ -22,8 +22,6 @@ parser = argparse.ArgumentParser(description='This pipeline analyses metagenomic
 # Required parameters
 parser.add_argument('--identifier_length', '-e', type=int, required=True,
                     help='The string length that identifies the sequencing read. Unique to each pair of reads')
-parser.add_argument('--filename_length', '-l', type=int, required=True,
-                    help='The string length that identifies the sequencing read. Up to the filetype suffix')
 
 # Input/output
 parser.add_argument('--input_folder', '-i', default=None,
@@ -39,13 +37,13 @@ parser.add_argument('--trimmomatic', '-m', default=None,
 
 # Database paths
 parser.add_argument('--kraken2_db1', '-1', default=None,
-                    help='kraken2 db1 path')
+                    help='Kraken 2 db1 path')
 parser.add_argument('--kraken2_db2', '-2', default=None,
-                    help='kraken2 db2 path')
+                    help='Kraken 2 db2 path')
 parser.add_argument('--diamond_db', '-d', default=None,
-                    help='diamond db path')
+                    help='DIAMOND db path')
 parser.add_argument('--kneaddata_db', '-k', default=None,
-                    help='knead_data path')
+                    help='KneadData path')
 
 # Input filetype data
 parser.add_argument('--gen_id', '-g', default='fastq.gz',
@@ -77,7 +75,7 @@ kneaddata_db_path = args.kneaddata_db
 gen_id = args.gen_id
 r1_id = args.r1_id
 r2_id = args.r2_id
-file_length = args.filename_length
+file_length = id_length + 3
 metadata = args.metadata
 
 # Logging
@@ -133,8 +131,8 @@ for val in metadata_dict:
     result_dict = {}
     sample_dict[sample]['metadata'] = val
     try:
-        sample_dict[sample]['metadata']['nonhuman_reads'] = meta_output[1][sample][1]
-        sample_dict[sample]['metadata']['total_reads'] = meta_output[1][sample][0]
+        sample_dict[sample]['metadata']['nonhuman_reads'] = meta_output[1][f'{sample}_R1'][1]
+        sample_dict[sample]['metadata']['total_reads'] = meta_output[1][f'{sample}_R1'][0]
     except KeyError:
         logger.info(f'No nonhuman reads data for {sample}')
     sample_dict[sample]['genus_dict'] = genus_dict
