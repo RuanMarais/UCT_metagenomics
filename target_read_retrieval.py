@@ -282,8 +282,8 @@ if os.path.isdir(pirs_dir):
             if os.path.isfile(read_1_target) and os.path.isfile(read_2_target):
 
                 # New filenames
-                read_1_out = os.path.join(org_file, f'{reference_org_name}_1.fastq.gz')
-                read_2_out = os.path.join(org_file, f'{reference_org_name}_2.fastq.gz')
+                read_1_out = os.path.join(org_file, f'{reference_org_name}_R1.fastq.gz')
+                read_2_out = os.path.join(org_file, f'{reference_org_name}_R2.fastq.gz')
 
                 # Move the synthetic reads to the organism-specific directory to limit data usage and facilitate ease
                 # of access for manual and automated review and downstream analysis
@@ -310,14 +310,14 @@ for organism_key, fragmented_reads_data in fragmented_reads_dict.items():
     input_folder = fragmented_reads_data[0]
     organism_name = fragmented_reads_data[1]
     kraken_db = fragmented_reads_data[2]
-    id_length = len(organism_key)
-    file_length = id_length + 1
+    id_len = len(organism_key)
+    file_len = id_len + 3
     reference = os.path.join(references_directory, reference_prefix_dict[organism_key])
 
     # file identifiers
     gen_id = 'fastq.gz'
-    r1_id = '_1.fastq.gz'
-    r2_id = '_2.fastq.gz'
+    r1_id = '_R1.fastq.gz'
+    r2_id = '_R2.fastq.gz'
 
     # Check which kraken2 database to use
     kraken2_db1_in = None
@@ -329,7 +329,7 @@ for organism_key, fragmented_reads_data in fragmented_reads_dict.items():
 
     # Run kraken2
     merged_reads = meta.meta_analysis(input_folder,
-                                      id_length,
+                                      id_len,
                                       input_folder,
                                       threads,
                                       trimmomatic_path,
@@ -338,7 +338,7 @@ for organism_key, fragmented_reads_data in fragmented_reads_dict.items():
                                       gen_id,
                                       r1_id,
                                       r2_id,
-                                      file_length,
+                                      file_len,
                                       kraken2_db1_in,
                                       kraken2_db2_in,
                                       diamond_db_path=None,

@@ -407,7 +407,7 @@ def meta_analysis(input_folder,
                         try:
                             subprocess.run(diamond_command_contigs, check=True)
                             logger.info(f'Diamond command successful')
-                        except subprocess.CalledProcessError as e:
+                        except subprocess.CalledProcessError:
                             logger.error(f'Diamond command failed: {diamond_command_contigs}')
                     if unassigned_files[1] is not None:
                         diamond_command_interleaved = diamond.diamond_classify(created_diamond_db,
@@ -434,7 +434,7 @@ def meta_analysis(input_folder,
                 save_path = extracted_reads_db2_directory
 
             for db, kraken_reports in krakenfiles.items():
-                key_item = f'{targeted}_1'
+                key_item = f'{targeted}_R1'
                 if key_item in kraken_reports:
                     report_path = kraken_reports[key_item][3]
                     parse_data.extend(parse.generate_kraken2_report_csv(report_path, kraken_reports[key_item][4], logger))
