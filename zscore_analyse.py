@@ -45,7 +45,7 @@ def process_read_data(tax_dict,
                 logger.error(f'Error accessing metadata for {sample}')
 
 
-def importer(file):
+def importer(file, logger):
     """
     Helper function to import a csv file as a list of dictionaries
 
@@ -53,10 +53,14 @@ def importer(file):
     :return: list of dictionaries
     """
     output = []
-    with open(file, 'rb') as f:
-        reader = unicodecsv.DictReader(f)
-        output.extend(list(reader))
-    return output
+    try:
+        with open(file, 'rb') as f:
+            reader = unicodecsv.DictReader(f)
+            output.extend(list(reader))
+        return output
+    except IOError:
+        return None
+        logger.error(f'Error: File {file} not found')
 
 
 def generate_export_list(nested_dict,

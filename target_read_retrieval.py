@@ -36,7 +36,7 @@ parser.add_argument('--references_directory', '-d', required=True,
                     help='Directory for ncbi references')
 
 # Input/Output folders
-parser.add_argument('--uct_meta_output', '-k', Required=True,
+parser.add_argument('--uct_meta_output', '-k', required=True,
                     help='The file path that uct_meta.py outputs to')
 parser.add_argument('--output_folder', '-o', default=None,
                     help='Result folders will be output to this folder')

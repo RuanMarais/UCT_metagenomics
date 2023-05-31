@@ -116,10 +116,11 @@ def extract_targeted_reads(krakenfile_dict_1,
                     raw_read_2 = None
 
                 # Retrieve the reference filepath for the target
-                if reference_data[3] != '':
-                    reference_name = reference_data[3]
-                    if os.path.isfile(os.path.join(reference_folder, reference_name)):
-                        reference = os.path.join(reference_folder, reference_name)
+                if reference_data[2] != '':
+                    reference_name = reference_data[2]
+                    reference_path = os.path.join(reference_folder, reference_name)
+                    if os.path.isfile(reference_path):
+                        reference = reference_path
                     else:
                         logger.error(f'Error: {id_item} reference file does not exist')
                         reference = None
