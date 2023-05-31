@@ -168,8 +168,8 @@ for output_directory in meta_output[0]:
             logger.warning(f'No kraken2 report found for {sample_directory[1]}')
 
 # Organise species and genus data
-zscore.process_read_data(species_dict, sample_dict, logger)
-zscore.process_read_data(genus_dict, sample_dict, logger)
+zscore.process_read_data(species_dict, sample_dict, 'species_dict', logger)
+zscore.process_read_data(genus_dict, sample_dict, 'genus_dict', logger)
 
 # z-score analysis
 zscore_output = os.path.join(output_folder, 'zscore_results')

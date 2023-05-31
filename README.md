@@ -82,7 +82,7 @@ to the script and specified in the reference csv specified above.
 
 Basic usage:
 
-`target_read_retrieval.py -e <string_length_identifying_reads> -r <reference_file> -d <reference_genome_directory_filepath> -k <input_folder_kneaddata_generated_reads> -1 <input_folder_kraken_generated_results_db1> -2 <input_folder_kraken_generated_results_db2> -t <threads> -p <conda_environment_name_with_pIRS> -m <trimmomatic_path> -i <kraken2_database_1_path> -I <kraken2_database_2_path> -K <kneaddata_database_path> -o <output_folder>` 
+`target_read_retrieval.py -e <string_length_identifying_reads> -r <reference_file> -d <reference_genome_directory_filepath> -k <uct_meta.py output folder> -t <threads> -p <conda_environment_name_with_pIRS> -m <trimmomatic_path> -i <kraken2_database_1_path> -I <kraken2_database_2_path> -K <kneaddata_database_path> -o <output_folder>` 
 
 The script uses the following arguments:
 
@@ -93,14 +93,7 @@ reads. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier 
 
 - `--references_directory, -d` - (Required) The filepath to the directory containing the reference genomes.
 
-- `--input_folder_knead, -k` - (Default=Assumes CWD is the output directory of the uct_meta.py script) The path to the 
-folder containing the KneadData generated reads.
-
-- `--input_folder_kraken2_1, -1` - (Default=Assumes CWD is the output directory of the uct_meta.py script) The path to 
-the folder containing the Kraken 2 generated results for database 1.
-
-- `--input_folder_kraken2_2, -2` - (Default=Assumes CWD is the output directory of the uct_meta.py script) The path to 
-the folder containing the kraken generated results for database 2.
+- `--uct_meta_output, -k` - (Required) The filepath to the output folder for the uct_meta.py script.
 
 - `--threads, -t` - (Default=1) The number of threads to be used for the analysis.
 

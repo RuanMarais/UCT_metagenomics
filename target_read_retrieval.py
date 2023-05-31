@@ -36,14 +36,10 @@ parser.add_argument('--references_directory', '-d', required=True,
                     help='Directory for ncbi references')
 
 # Input/Output folders
-parser.add_argument('--input_folder_knead', '-k', default=None,
-                    help='The file path that contains the kneaddata paired output files used for kraken analysis')
+parser.add_argument('--uct_meta_output', '-k', Required=True,
+                    help='The file path that uct_meta.py outputs to')
 parser.add_argument('--output_folder', '-o', default=None,
                     help='Result folders will be output to this folder')
-parser.add_argument('--input_folder_kraken2_1', '-1', default=None,
-                    help='Result folder for kraken2 results from database 1')
-parser.add_argument('--input_folder_kraken2_2', '-2', default=None,
-                    help='Result folder for kraken2 results from database 2')
 
 # System parameters
 parser.add_argument('--threads', '-t', type=int, default=1,
@@ -71,19 +67,14 @@ threads = args.threads
 main_output = args.output_folder
 if main_output is None:
     main_output = os.getcwd()
+uct_meta_output = args.uct_meta_output
 
 output_folder = os.path.join(main_output, 'targeted_reads_retrieval')
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
-input_folder_knead = args.input_folder_knead
-if input_folder_knead is None:
-    input_folder_knead = _dv.knead_data_path
-kraken2_dir_1 = args.input_folder_kraken2_1
-if kraken2_dir_1 is None:
-    kraken2_dir_1 = _dv.input_folder_kraken2_1
-kraken2_dir_2 = args.input_folder_kraken2_2
-if kraken2_dir_2 is None:
-    kraken2_dir_2 = _dv.input_folder_kraken2_2
+input_folder_knead = os.path.join(uct_meta_output, 'kraken2_source_files')
+kraken2_dir_1 = os.path.join(uct_meta_output, 'kraken2_db1_results')
+kraken2_dir_2 = os.path.join(uct_meta_output, 'kraken2_db2_results')
 pirs_env = args.pirs_env
 if pirs_env is None:
     pirs_env = _dv.pirs_env_name
@@ -114,7 +105,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 handler.setLevel(logging.DEBUG)
 logger.setLevel(logging.DEBUG)
-logger.debug("Targeted read retrieval started")
+logger.info("Targeted read retrieval started")
 
 # Generate a list with all valid filenames
 file_names_all = services.filename_list_generate('.fastq', input_folder_knead)
@@ -135,11 +126,11 @@ directory_paths_kraken = [(os.path.join(kraken2_dir_1, folder), folder)
                           for folder in folders_kraken
                           if os.path.isdir(os.path.join(kraken2_dir_1, folder))]
 for directory in directory_paths_kraken:
-    logger.debug(f'Kraken2 krakenfile retrieval: {directory}')
+    logger.info(f'Kraken2 krakenfile retrieval: {directory}')
     filename_1 = f'{directory[1]}_krakenfile'
     file_1 = os.path.join(directory[0], filename_1)
     if os.path.isfile(file_1):
-        logger.debug(f'Kraken2 krakenfile assigned to dictionary: {directory[1]}')
+        logger.info(f'Kraken2 krakenfile assigned to dictionary: {directory[1]}')
         kraken2_krakenfiles_1[directory[1]] = file_1
 
 # Generate krakenfile dict for kraken2 database 1
@@ -149,11 +140,11 @@ directory_paths_kraken = [(os.path.join(kraken2_dir_2, folder), folder)
                           for folder in folders_kraken
                           if os.path.isdir(os.path.join(kraken2_dir_2, folder))]
 for directory in directory_paths_kraken:
-    logger.debug(f'Kraken2 krakenfile retrieval: {directory}')
+    logger.info(f'Kraken2 krakenfile retrieval: {directory}')
     filename_1 = f'{directory[1]}_krakenfile'
     file_1 = os.path.join(directory[0], filename_1)
     if os.path.isfile(file_1):
-        logger.debug(f'Kraken2 krakenfile assigned to dictionary: {directory[1]}')
+        logger.info(f'Kraken2 krakenfile assigned to dictionary: {directory[1]}')
         kraken2_krakenfiles_2[directory[1]] = file_1
 
 # Create an empty dictionary to store the data from the provided reference_file
@@ -241,9 +232,9 @@ pirs_commands = frag.generate_pirs_commands(references_directory,
 for command in pirs_commands:
     try:
         subprocess.run(command, check=True)
-        logger.info(f'Pirs synthetic read generation')
+        logger.info(f'pIRS synthetic read generation')
     except subprocess.CalledProcessError as e:
-        logger.error(f'Pirs synthetic read generation failed: {command}')
+        logger.error(f'pIRS synthetic read generation failed: {command}')
 
 # Pirs data organisation object
 fragmented_reads_dict = {}
@@ -251,7 +242,7 @@ fragmented_reads_dict = {}
 # Check that the pirs output directory exists
 pirs_dir = os.path.join(references_directory, 'pirs_output')
 if os.path.isdir(pirs_dir):
-    logger.info(f'Pirs output directory found: {pirs_dir}')
+    logger.info(f'pIRS output directory found: {pirs_dir}')
     files_pirs = os.listdir(pirs_dir)
     # iterate over the files in the pirs output directory which should contain the folders for the generated
     # raw synthetic reads and confirm they are directories and not equal to synthetic_reads which indicates repeat

@@ -18,6 +18,7 @@ import os
 
 def process_read_data(tax_dict,
                       sample_dict,
+                      sample_dict_field,
                       logger):
     """
     This function processes the read data from the kraken2 report and adds it to the sample dictionary
@@ -37,9 +38,9 @@ def process_read_data(tax_dict,
                         located = True
                 if located:
                     ratio = read_data / nonhuman_reads
-                    sample_dict[sample]['species_dict'][tax] = [read_data, ratio]
+                    sample_dict[sample][sample_dict_field][tax] = [read_data, ratio]
                 else:
-                    sample_dict[sample]['species_dict'][tax] = [0, 0]
+                    sample_dict[sample][sample_dict_field][tax] = [0, 0]
             except KeyError:
                 logger.error(f'Error accessing metadata for {sample}')
 
