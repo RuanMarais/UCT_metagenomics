@@ -312,7 +312,7 @@ for organism_key, fragmented_reads_data in fragmented_reads_dict.items():
     kraken_db = fragmented_reads_data[2]
     id_len = len(organism_key)
     file_len = id_len + 3
-    reference = os.path.join(references_directory, reference_prefix_dict[organism_key])
+    reference = os.path.join(references_directory, organism_key)
 
     # file identifiers
     gen_id = 'fastq.gz'
@@ -357,7 +357,7 @@ for organism, reference_data in organism_reference_dict.items():
         logger.error(f'Indexing command failed: {command}')
 
 # Generate alignment commands dictionary for reference synthetic read alignment
-command_dict_defaultdict_ref = defaultdict(list)
+command_dict_ref = {}
 for ref_name, alignment_data_items in alignment_dict_pirs.items():
     ref_dir = os.path.join(reference_alignment_output, ref_name)
     if not os.path.exists(ref_dir):
@@ -369,13 +369,13 @@ for ref_name, alignment_data_items in alignment_dict_pirs.items():
                                                               alignment_data_items[0][1],
                                                               ref_dir,
                                                               threads)
-        command_dict_defaultdict_ref[ref_name].append(alignment_commands)
+        command_dict_ref[ref_name] = alignment_commands
 
 # Run alignment
 reference_folder_output = os.path.join(output_folder, 'reference_evaluation')
 if not os.path.exists(reference_folder_output):
     os.makedirs(reference_folder_output)
-for ref_name, command_dict in command_dict_defaultdict_ref.items():
+for ref_name, command_dict in command_dict_ref.items():
     align_output = bowtie2.run_alignment(command_dict, logger)
     output_file = os.path.join(reference_folder_output, f'{ref_name}')
     bowtie2.coverage_command(align_output[1], output_file)

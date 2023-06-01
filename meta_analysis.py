@@ -467,8 +467,8 @@ def meta_analysis(input_folder,
                 except subprocess.CalledProcessError as e:
                     logger.error(f'Extracting {taxid} reads failed: {extract_reads_command}')
 
-            read_merge_1 = os.path.join(save_path, f'{target_name}_R1.fastq')
-            read_merge_2 = os.path.join(save_path, f'{target_name}_R2.fastq')
+            read_merge_1 = os.path.join(save_path, f'{target_name.replace(" ", "_")}_R1.fastq')
+            read_merge_2 = os.path.join(save_path, f'{target_name.replace(" ", "_")}_R2.fastq')
 
             try:
                 with open(read_merge_1, 'w') as outfile:

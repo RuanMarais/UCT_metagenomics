@@ -173,9 +173,14 @@ if metadata_dict is not None:
     zscore.process_read_data(genus_dict, sample_dict, 'genus_dict', logger)
 
     # z-score analysis
-    zscore_output = os.path.join(output_folder, 'zscore_results')
-    if not os.path.isdir(zscore_output):
-        os.mkdir(zscore_output)
-    zscore.z_score_analysis(sample_dict, run_list, zscore_output)
+    for run in run_list:
+        neg = f'NCrun{run}'
+        if sample_dict[neg]['species_dict']:
+            zscore_output = os.path.join(output_folder, 'zscore_results')
+            if not os.path.isdir(zscore_output):
+                os.mkdir(zscore_output)
+            zscore.z_score_analysis(sample_dict, run_list, zscore_output)
+    else:
+        logger.warning('Negative controls not found for all runs. Could not complete z-score analysis')
 else:
     logger.warning('No metadata file found. Could not complete z-score analysis')

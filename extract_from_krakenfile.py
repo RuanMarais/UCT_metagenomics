@@ -98,7 +98,7 @@ def extract_targeted_reads(krakenfile_dict_1,
 
                 # Retrieve the organism name
                 if reference_data[0] != '':
-                    organism = reference_data[0]
+                    organism = reference_data[0].replace(" ", "_")
                 else:
                     logger.error(f'Error: {id_item} organism name is empty')
                     organism = None
@@ -117,9 +117,11 @@ def extract_targeted_reads(krakenfile_dict_1,
 
                 # Retrieve the reference filepath for the target
                 if reference_data[2] != '':
-                    reference_name = reference_data[2]
+                    reference_base = reference_data[2]
+                    reference_name = reference_data[3]
                     reference_path = os.path.join(reference_folder, reference_name)
-                    if os.path.isfile(reference_path):
+                    reference_base_path = os.path.join(reference_folder, reference_base)
+                    if os.path.isfile(reference_base_path):
                         reference = reference_path
                     else:
                         logger.error(f'Error: {id_item} reference file does not exist')
