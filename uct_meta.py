@@ -172,14 +172,18 @@ if metadata_dict is not None:
     zscore.process_read_data(species_dict, sample_dict, 'species_dict', logger)
     zscore.process_read_data(genus_dict, sample_dict, 'genus_dict', logger)
 
-    # z-score analysis
+    # Check if z-score analysis can be performed (all runs have neg control)
+    z_score_analyse = True
     for run in run_list:
         neg = f'NCrun{run}'
-        if sample_dict[neg]['species_dict']:
-            zscore_output = os.path.join(output_folder, 'zscore_results')
-            if not os.path.isdir(zscore_output):
-                os.mkdir(zscore_output)
-            zscore.z_score_analysis(sample_dict, run_list, zscore_output)
+        if not sample_dict[neg]['species_dict']:
+            z_score_analyse = False
+
+    if z_score_analyse:
+        zscore_output = os.path.join(output_folder, 'zscore_results')
+        if not os.path.isdir(zscore_output):
+            os.mkdir(zscore_output)
+        zscore.z_score_analysis(sample_dict, run_list, zscore_output)
     else:
         logger.warning('Negative controls not found for all runs. Could not complete z-score analysis')
 else:

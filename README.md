@@ -17,11 +17,11 @@ The filename convention is as follows:
 
 The number of chars in the sample name should be consistent (including negative control)
 
-Basic usage:
+### Basic usage:
 
-`uct_meta.py -e <string_length_identifying_reads> -i <input_folder> -o <output_folder> -t <threads> -m <trimmomatic_path> -1 <path_to_kraken2_db1> -2 <path_to_kraken2_db2> -d <path_to_fasta_file_for_db_creation> -k <path_to_kneaddata_db> -g <string_present_in_all_unprocessed_reads> '-f' <string_present_in_all_forward_reads> '-r' <string_present_in_all_reverse_reads> '-a' <metadata_file>`
+`uct_meta.py -e <string_length_identifying_reads> -i <input_folder> -o <output_folder> -t <threads> -m <trimmomatic_path> -1 <path_to_kraken2_db1> -2 <path_to_kraken2_db2> -d <path_to_fasta_file_for_db_creation> -k <path_to_kneaddata_db> -g <string_present_in_all_unprocessed_reads> -f <string_present_in_all_forward_reads> -r <string_present_in_all_reverse_reads> -a <metadata_file>`
 
-The script takes the following arguments:
+#### The script takes the following arguments:
 
 - `--identifier_length, -e` - (Required) The string length of the input reads' filename that identifies the pair of 
 reads as a unit. For example: [sample_1_R1.fastq.gz, sample_1_R2.fastq.gz] the identifier length would be 8.
@@ -60,6 +60,13 @@ The metadata file (-a) is csv with the headers:
 
 The sample name should correspond to the substring generated when the read filenames are split by the identifier 
 length (-e). Run is an integer. 
+
+### Output
+
+The output folder will contain the following files:
+
+- 
+
 
 ## Usage - target_read_retrieval.py
 

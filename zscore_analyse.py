@@ -49,6 +49,7 @@ def importer(file, logger):
     """
     Helper function to import a csv file as a list of dictionaries
 
+    :param logger: A logging object to generate the logfile
     :param file: csv file to be imported
     :return: list of dictionaries
     """
@@ -57,10 +58,11 @@ def importer(file, logger):
         with open(file, 'rb') as f:
             reader = unicodecsv.DictReader(f)
             output.extend(list(reader))
+            logger.info(f'Imported {file}')
         return output
     except IOError:
-        return None
         logger.error(f'Error: File {file} not found')
+        return None
 
 
 def generate_export_list(nested_dict,
@@ -263,7 +265,7 @@ def z_score_analysis(sample_dict,
     # Generate excel files for each sample with the pathogen z-score data
     for participant in sample_dict.keys():
         write_to_excel(sample_dict[participant]['results'],
-                       f'{participant}.xlsx',
+                       f'{participant}_results.xlsx',
                        keys_print,
                        column_headings,
                        output_folder)
@@ -287,5 +289,3 @@ def z_score_analysis(sample_dict,
             worksheet.write(i, j, cell_data)
 
     workbook.close()
-
-

@@ -372,13 +372,18 @@ for ref_name, alignment_data_items in alignment_dict_pirs.items():
         command_dict_ref[ref_name] = alignment_commands
 
 # Run alignment
-reference_folder_output = os.path.join(output_folder, 'reference_evaluation')
+reference_folder_output = os.path.join(main_output, 'reference_evaluation')
 if not os.path.exists(reference_folder_output):
     os.makedirs(reference_folder_output)
 for ref_name, command_dict in command_dict_ref.items():
     align_output = bowtie2.run_alignment(command_dict, logger)
     output_file = os.path.join(reference_folder_output, f'{ref_name}')
-    bowtie2.coverage_command(align_output[1], output_file)
+    cov_command = bowtie2.coverage_command(align_output[1], output_file)
+    try:
+        subprocess.run(cov_command, check=True)
+        logger.info(f'Reference coverage evaluation successful: {ref_name}')
+    except subprocess.CalledProcessError:
+        logger.error(f'Reference coverage evaluation failed: {cov_command}')
 
 # Generate alignment commands dictionary for targeted retrieval
 command_dict_defaultdict = defaultdict(list)
