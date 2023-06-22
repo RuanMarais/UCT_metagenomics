@@ -69,7 +69,7 @@ def generate_kneaddata_commands(raw_reads_dict,
     :param threads: The number of threads to use
     :param trimmomatic_path: The filepath to the trimmomatic jar file
     :param kneaddata_db_path: The filepath to the kneaddata database
-    :return:
+    :return: A list of kneaddata commands to run using subprocess
     """
     commands = []
     for key, reads_tuple in raw_reads_dict.items():

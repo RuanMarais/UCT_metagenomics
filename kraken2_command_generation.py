@@ -45,7 +45,7 @@ def generate_kraken2_commands(reads_dict,
     :param output_directory: The filepath to the output directory
     :param threads: The number of threads to use
     :param kraken2_db_path: The filepath to the kraken2 database
-    :return:
+    :return: The list of kraken2 commands to run using subprocess
     """
     commands = []
     for key, reads_tuple in reads_dict.items():

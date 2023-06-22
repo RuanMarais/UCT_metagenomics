@@ -183,7 +183,7 @@ if metadata_dict is not None:
         zscore_output = os.path.join(output_folder, 'zscore_results')
         if not os.path.isdir(zscore_output):
             os.mkdir(zscore_output)
-        zscore.z_score_analysis(sample_dict, run_list, zscore_output)
+        zscore.z_score_analysis(sample_dict, run_list, zscore_output, logger)
     else:
         logger.warning('Negative controls not found for all runs. Could not complete z-score analysis')
 else:
