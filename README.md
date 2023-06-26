@@ -1,4 +1,4 @@
-# UCT_metagenomics
+# UCT_metagenomics - Version 1.0 - 2023-06-26
 
 This pipeline was developed for the metagenomic classification Illumina paired-end reads through the uct_meta.py script. 
 Targeted read evaluation can also be performed using the target_read_retrieval.py script for the specific further 
