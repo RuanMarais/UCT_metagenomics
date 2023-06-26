@@ -18,7 +18,11 @@ The filename convention is as follows:
 
 `<sample_name>_R<1/2>.fastq.gz`
 
-The number of chars in the sample name should be consistent (including negative control)
+The number of chars in the sample name should be consistent and the same as the negative control. The negative control naming convention is as follows:
+
+`NCrun<run>_R<1/2>.fastq.gz`
+
+Thus the number of chars for <sample_name> should be the same as the number of chars for NCrun<run>.
 
 ### Basic usage:
 
