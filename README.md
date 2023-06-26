@@ -59,14 +59,7 @@ The metadata file (-a) is csv with the headers:
 `sample,run`
 
 The sample name should correspond to the substring generated when the read filenames are split by the identifier 
-length (-e). Run is an integer. 
-
-### Output
-
-The output folder will contain the following files:
-
-- 
-
+length (-e). Run is an integer.
 
 ## Usage - target_read_retrieval.py
 
