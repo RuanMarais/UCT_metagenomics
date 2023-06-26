@@ -8,6 +8,9 @@ evaluation of reads classified by kraken2.
 
 This pipeline is run in a conda environment which can be created using the file uct_meta_env.yml.
 
+Note: pIRS (https://github.com/galaxy001/pirs) is not included in the yml file and should be installed in a separate 
+conda environment. The name of the environment is passed to the target_read_retrieval.py script with '-p'.
+
 ## Usage - uct_meta.py
 
 The uct_meta.py script is run using python. The script takes as input a directory with paired-end reads. 
