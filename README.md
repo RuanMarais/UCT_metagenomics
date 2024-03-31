@@ -22,7 +22,7 @@ The number of chars in the sample name should be consistent and the same as the 
 
 `NCrun<run>_R<1/2>.fastq.gz`
 
-Thus the number of chars for '<sample_name>' should be the same as the number of chars for 'NCrun<run>'.
+Thus the number of chars for `<sample_name>` should be the same as the number of chars for `NCrun<run>`.
 
 ### Basic usage:
 
